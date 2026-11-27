@@ -6,6 +6,7 @@ import cochera.impresion.Impresora;
 import cochera.impresion.ImpresoraArchivo;
 import cochera.impresion.ImpresoraTermicaConsola;
 import cochera.servicio.AdminServicio;
+import cochera.servicio.AlquilerMensualServicio;
 import cochera.servicio.AutenticacionServicio;
 import cochera.servicio.CalculadoraTarifa;
 import cochera.servicio.CheckinServicio;
@@ -34,6 +35,7 @@ public class ContextoAplicacion {
     private final ClienteServicio clientes;
     private final VentaServicio ventas;
     private final VehiculoServicio vehiculos;
+    private final AlquilerMensualServicio mensuales;
     private final CheckinServicio checkin;
     private final CheckoutServicio checkout;
     private final CobrosServicio cobros;
@@ -63,6 +65,7 @@ public class ContextoAplicacion {
         ventas = new VentaServicio(baseDatos, auth);
         vehiculos = new VehiculoServicio(baseDatos, auth);
         checkin = new CheckinServicio(baseDatos, reloj, turnos, clientes, vehiculos);
+        mensuales = new AlquilerMensualServicio(baseDatos, reloj, auth);
         checkout = new CheckoutServicio(baseDatos, reloj, auth, turnos, calculadora, ventas);
         cobros = new CobrosServicio(baseDatos, auth, turnos);
         monitoreo = new MonitoreoServicio(baseDatos, reloj, auth, turnos, calculadora);
@@ -128,6 +131,10 @@ public class ContextoAplicacion {
 
     public VehiculoServicio getVehiculos() {
         return vehiculos;
+    }
+
+    public AlquilerMensualServicio getMensuales() {
+        return mensuales;
     }
 
     public CheckinServicio getCheckin() {

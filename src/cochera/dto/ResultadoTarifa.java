@@ -1,10 +1,15 @@
 package cochera.dto;
 
+import cochera.modelo.TipoAlquiler;
+
 /**
  * Detalle del monto de un alquiler al momento del cálculo: tiempo, precio, subtotal,
  * descuento y total. El total siempre sale de Alquiler.calcularMonto().
  */
 public class ResultadoTarifa {
+
+    private final TipoAlquiler tipo;
+    private final int meses;
 
     private final long minutos;
     private final double precioHora;
@@ -13,6 +18,13 @@ public class ResultadoTarifa {
     private final double tarifaTotal;
 
     public ResultadoTarifa(long minutos, double precioHora, double subtotal, double descuento, double tarifaTotal) {
+        this(minutos, precioHora, subtotal, descuento, tarifaTotal, TipoAlquiler.POR_HORA, 0);
+    }
+
+    public ResultadoTarifa(long minutos, double precioHora, double subtotal, double descuento, double tarifaTotal,
+                           TipoAlquiler tipo, int meses) {
+        this.tipo = tipo;
+        this.meses = meses;
         this.minutos = minutos;
         this.precioHora = precioHora;
         this.subtotal = subtotal;
@@ -42,5 +54,18 @@ public class ResultadoTarifa {
     /** Monto a cobrar. */
     public double getTarifaTotal() {
         return tarifaTotal;
+    }
+
+    public TipoAlquiler getTipo() {
+        return tipo;
+    }
+
+    public boolean esMensual() {
+        return tipo == TipoAlquiler.MENSUAL;
+    }
+
+    /** Meses cobrados (solo en el alquiler mensual). */
+    public int getMeses() {
+        return meses;
     }
 }

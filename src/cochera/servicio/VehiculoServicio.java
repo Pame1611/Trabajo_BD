@@ -90,15 +90,20 @@ public class VehiculoServicio {
         bd.eliminarMarca(marca);
     }
 
-    /** RF-TAR-04: agrega un tipo de vehículo nuevo con su tarifa por hora. */
+    /** RF-TAR-04: agrega un tipo de vehículo nuevo con su tarifa por hora (sin tarifa mensual). */
     public Tarifa agregarTipoVehiculo(String nombre, double precioHora) throws CocheraException {
+        return agregarTipoVehiculo(nombre, precioHora, 0);
+    }
+
+    /** Agrega un tipo de vehículo nuevo con su tarifa por hora y su tarifa mensual. */
+    public Tarifa agregarTipoVehiculo(String nombre, double precioHora, double tarifaMensual) throws CocheraException {
         auth.requerirAdmin();
         if (Texto.vacio(nombre)) {
             throw new ValidacionException("Escribe el nombre del tipo de vehículo.");
         }
         Tarifa nueva;
         try {
-            nueva = new Tarifa(bd.siguienteIdTarifa(), nombre.trim(), precioHora);
+            nueva = new Tarifa(bd.siguienteIdTarifa(), nombre.trim(), precioHora, tarifaMensual);
         } catch (IllegalArgumentException e) {
             throw new ValidacionException(e.getMessage());
         }

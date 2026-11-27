@@ -10,6 +10,7 @@ import cochera.modelo.MetodoPago;
 import cochera.modelo.Modelo;
 import cochera.modelo.Pago;
 import cochera.modelo.Tarifa;
+import cochera.modelo.TipoAlquiler;
 import cochera.modelo.TurnoCaja;
 import cochera.modelo.Venta;
 import cochera.util.Reloj;
@@ -43,34 +44,37 @@ public final class DatosIniciales {
         }
     }
 
-    /** Tarifa por hora de cada tipo de vehículo (el cobro es por minuto: tarifa / 60). */
+    /**
+     * Tarifa por hora (el cobro es por minuto: tarifa / 60) y tarifa mensual de cada tipo
+     * de vehículo (el alquiler por mes tiene 10% de descuento sobre la tarifa mensual).
+     */
     private static void cargarTarifario(BaseDatos bd) throws ValidacionException {
         Object[][] filas = {
-            {"Bicicleta", 1.00},
-            {"Triciclo", 1.50},
-            {"Moto Lineal", 1.50},
-            {"Carretilla", 1.50},
-            {"Mototaxi", 2.00},
-            {"Auto", 3.00},
-            {"Furgo Pequeño", 4.00},
-            {"Camioneta Cerrada y Abierta", 5.00},
-            {"Minivan Pequeña", 5.00},
-            {"Furgon Grande", 6.00},
-            {"Minivan Grande", 6.00},
-            {"Camion 1 Eje", 7.00},
-            {"Micro", 7.00},
-            {"Maquinaria Pequeña", 7.00},
-            {"Omnibus", 8.00},
-            {"Mini Bus", 8.00},
-            {"Camion 2 Ejes", 9.00},
-            {"Maquinaria Grande", 9.00},
-            {"Volquete", 9.00},
-            {"Omnibus 2 Pisos", 12.00},
-            {"Trailer Sin Carreta", 12.00},
-            {"Trailer Con Carreta", 15.00},
+            {"Bicicleta", 1.00, 40.00},
+            {"Triciclo", 1.50, 60.00},
+            {"Moto Lineal", 1.50, 60.00},
+            {"Carretilla", 1.50, 60.00},
+            {"Mototaxi", 2.00, 80.00},
+            {"Auto", 3.00, 200.00},
+            {"Furgo Pequeño", 4.00, 250.00},
+            {"Camioneta Cerrada y Abierta", 5.00, 300.00},
+            {"Minivan Pequeña", 5.00, 300.00},
+            {"Furgon Grande", 6.00, 350.00},
+            {"Minivan Grande", 6.00, 350.00},
+            {"Camion 1 Eje", 7.00, 400.00},
+            {"Micro", 7.00, 400.00},
+            {"Maquinaria Pequeña", 7.00, 400.00},
+            {"Omnibus", 8.00, 450.00},
+            {"Mini Bus", 8.00, 450.00},
+            {"Camion 2 Ejes", 9.00, 500.00},
+            {"Maquinaria Grande", 9.00, 500.00},
+            {"Volquete", 9.00, 500.00},
+            {"Omnibus 2 Pisos", 12.00, 650.00},
+            {"Trailer Sin Carreta", 12.00, 650.00},
+            {"Trailer Con Carreta", 15.00, 800.00},
         };
         for (int i = 0; i < filas.length; i++) {
-            bd.insertarTarifa(new Tarifa(i + 1, (String) filas[i][0], (Double) filas[i][1]));
+            bd.insertarTarifa(new Tarifa(i + 1, (String) filas[i][0], (Double) filas[i][1], (Double) filas[i][2]));
         }
     }
 
@@ -174,6 +178,13 @@ public final class DatosIniciales {
                         bd.generarCorrelativoTicket(entrada.getYear()), (Cliente) d[3], carlos, (Modelo) d[4]);
                 bd.insertarTicket(t);
             }
+
+            // ── Alquiler mensual: Pedro guarda 2 autos por mes (S/ 200.00 - 10% = S/ 180.00 cada uno) ──
+            LocalDateTime inicioMes = ahora.minusDays(3).withHour(8).withMinute(30).withSecond(0).withNano(0);
+            bd.registrarTicket("AMX111", bd.buscarTarifa(6), inicioMes, pedro, carlos,
+                    modelo(bd, "Toyota", "Corolla"), TipoAlquiler.MENSUAL);
+            bd.registrarTicket("AMX222", bd.buscarTarifa(6), inicioMes.plusMinutes(5), pedro, carlos,
+                    modelo(bd, "Kia", "Picanto"), TipoAlquiler.MENSUAL);
         } catch (ValidacionException e) {
             throw new IllegalStateException(e);
         }

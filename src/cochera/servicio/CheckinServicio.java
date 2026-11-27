@@ -7,6 +7,7 @@ import cochera.modelo.Alquiler;
 import cochera.modelo.Cliente;
 import cochera.modelo.Modelo;
 import cochera.modelo.Tarifa;
+import cochera.modelo.TipoAlquiler;
 import cochera.modelo.TurnoCaja;
 import cochera.util.Placa;
 import cochera.util.Reloj;
@@ -51,6 +52,15 @@ public class CheckinServicio {
      */
     public Alquiler registrarEntrada(String dniCliente, String nombreCliente, String placa, int idModelo,
                                      int idTarifa) throws CocheraException {
+        return registrarEntrada(dniCliente, nombreCliente, placa, idModelo, idTarifa, TipoAlquiler.POR_HORA);
+    }
+
+    /**
+     * Registra la entrada por hora o por mes. El alquiler por mes guarda la fecha de inicio y la
+     * de fin (30 días) y cobra la tarifa mensual del tipo con 10% de descuento.
+     */
+    public Alquiler registrarEntrada(String dniCliente, String nombreCliente, String placa, int idModelo,
+                                     int idTarifa, TipoAlquiler tipo) throws CocheraException {
         TurnoCaja turno = turnos.requerirTurnoAbierto(
                 "No tienes un turno abierto. Abre tu turno desde el Inicio antes de registrar entradas.");
 
@@ -76,6 +86,10 @@ public class CheckinServicio {
             throw new ValidacionException("Tipo de vehículo no válido.");
         }
 
+        if (tipo == TipoAlquiler.MENSUAL && !tarifa.ofreceMensual()) {
+            throw new ValidacionException("El tipo " + tarifa.getTipoVehiculo() + " no tiene tarifa mensual.");
+        }
+
         Alquiler duplicado = bd.buscarTicketEnCursoPorPlaca(placaNorm);
         if (duplicado != null) {
             throw new ValidacionException("Esta placa ya tiene un alquiler activo (" + duplicado.getCodigoBarras()
@@ -83,6 +97,7 @@ public class CheckinServicio {
         }
 
         Cliente cliente = clientes.obtenerORegistrar(dniCliente, nombreCliente);
-        return bd.registrarTicket(placaNorm, tarifa, reloj.ahora(), cliente, turno.getEmpleado(), modelo);
+        return bd.registrarTicket(placaNorm, tarifa, reloj.ahora(), cliente, turno.getEmpleado(), modelo,
+                tipo == null ? TipoAlquiler.POR_HORA : tipo);
     }
 }

@@ -57,6 +57,21 @@ public class Alquiler {
         return Dinero.redondear(minutosHasta(hasta) * tarifa.getPrecioHora() / 60.0);
     }
 
+    /** Monto antes de descuentos. En el alquiler por hora es igual a calcularMonto(). */
+    public double calcularSubtotal(LocalDateTime hasta) {
+        return calcularMonto(hasta);
+    }
+
+    /** Descuento aplicado = subtotal - monto (0 en el alquiler por hora). */
+    public double calcularDescuento(LocalDateTime hasta) {
+        return Dinero.redondear(calcularSubtotal(hasta) - calcularMonto(hasta));
+    }
+
+    /** Modalidad del alquiler; AlquilerMensual la redefine. */
+    public TipoAlquiler getTipoAlquiler() {
+        return TipoAlquiler.POR_HORA;
+    }
+
     /** Salida: registra la hora y marca el alquiler como PAGADO. */
     public void registrarSalida(LocalDateTime salida) {
         if (!estaEnCurso()) {

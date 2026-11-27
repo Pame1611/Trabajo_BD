@@ -145,13 +145,19 @@ public class AdminServicio {
 
     /** Cambia la tarifa por hora de un tipo de vehículo existente. Rechaza precios negativos. */
     public Tarifa actualizarTarifa(int id, double precioHora) throws CocheraException {
+        Tarifa tarifa = bd.buscarTarifa(id);
+        return actualizarTarifa(id, precioHora, tarifa == null ? 0 : tarifa.getTarifaMensual());
+    }
+
+    /** Cambia la tarifa por hora y la mensual de un tipo existente. Rechaza precios negativos. */
+    public Tarifa actualizarTarifa(int id, double precioHora, double tarifaMensual) throws CocheraException {
         auth.requerirAdmin();
         Tarifa tarifa = bd.buscarTarifa(id);
         if (tarifa == null) {
             throw new ValidacionException("Tarifa no encontrada.");
         }
         try {
-            tarifa.actualizarPrecio(precioHora);
+            tarifa.actualizarPrecios(precioHora, tarifaMensual);
         } catch (IllegalArgumentException e) {
             throw new ValidacionException(e.getMessage());
         }

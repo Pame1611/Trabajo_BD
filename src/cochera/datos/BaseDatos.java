@@ -2,11 +2,13 @@ package cochera.datos;
 
 import cochera.excepcion.ValidacionException;
 import cochera.modelo.Alquiler;
+import cochera.modelo.AlquilerMensual;
 import cochera.modelo.Cliente;
 import cochera.modelo.Marca;
 import cochera.modelo.Modelo;
 import cochera.modelo.Pago;
 import cochera.modelo.Tarifa;
+import cochera.modelo.TipoAlquiler;
 import cochera.modelo.TurnoCaja;
 import cochera.modelo.Usuario;
 import cochera.modelo.Venta;
@@ -326,6 +328,12 @@ public class BaseDatos {
      */
     public Alquiler registrarTicket(String placa, Tarifa tarifa, LocalDateTime horaEntrada,
                                     Cliente cliente, Usuario empleado, Modelo modelo) throws ValidacionException {
+        return registrarTicket(placa, tarifa, horaEntrada, cliente, empleado, modelo, TipoAlquiler.POR_HORA);
+    }
+
+    /** Igual que el anterior, creando un Alquiler por hora o un AlquilerMensual según la modalidad. */
+    public Alquiler registrarTicket(String placa, Tarifa tarifa, LocalDateTime horaEntrada, Cliente cliente,
+                                    Usuario empleado, Modelo modelo, TipoAlquiler tipo) throws ValidacionException {
         synchronized (candado) {
             Alquiler duplicado = buscarTicketEnCursoPorPlaca(placa);
             if (duplicado != null) {
@@ -338,8 +346,10 @@ public class BaseDatos {
             if (modelo == null || buscarModelo(modelo.getId()) == null) {
                 throw new ValidacionException("El modelo del vehículo no existe.");
             }
-            Alquiler ticket = new Alquiler(placa, tarifa, horaEntrada,
-                    generarCorrelativoTicket(horaEntrada.getYear()), cliente, empleado, modelo);
+            String codigo = generarCorrelativoTicket(horaEntrada.getYear());
+            Alquiler ticket = tipo == TipoAlquiler.MENSUAL
+                    ? new AlquilerMensual(placa, tarifa, horaEntrada, codigo, cliente, empleado, modelo)
+                    : new Alquiler(placa, tarifa, horaEntrada, codigo, cliente, empleado, modelo);
             tickets.add(ticket);
             return ticket;
         }
@@ -386,6 +396,18 @@ public class BaseDatos {
 
     public List<Alquiler> listarTickets() {
         return Collections.unmodifiableList(tickets);
+    }
+
+    /** Alquileres por mes (tabla alquiler con tipo_alquiler = 'MENSUAL'), del más reciente al más antiguo. */
+    public List<AlquilerMensual> listarAlquileresMensuales() {
+        List<AlquilerMensual> lista = new ArrayList<>();
+        for (Alquiler t : tickets) {
+            if (t instanceof AlquilerMensual) {
+                lista.add((AlquilerMensual) t);
+            }
+        }
+        lista.sort(Comparator.comparing(AlquilerMensual::getFechaInicio).reversed());
+        return lista;
     }
 
     /**

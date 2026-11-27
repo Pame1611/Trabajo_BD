@@ -4,6 +4,7 @@ import cochera.datos.BaseDatos;
 import cochera.excepcion.AccesoDenegadoException;
 import cochera.excepcion.CocheraException;
 import cochera.modelo.Alquiler;
+import cochera.modelo.AlquilerMensual;
 import cochera.modelo.Tarifa;
 import cochera.modelo.Usuario;
 import cochera.util.FechaUtil;
@@ -63,7 +64,11 @@ public class MonitoreoServicio {
         return FechaUtil.tiempoTranscurrido(t.getHoraEntrada(), reloj.ahora());
     }
 
+    /** Por hora: alerta a las 10 h y 12 h. Por mes: alerta 3 días antes del fin y al vencer. */
     public NivelAlerta nivelAlerta(Alquiler t) {
+        if (t instanceof AlquilerMensual) {
+            return NivelAlerta.segunFin(reloj.ahora(), ((AlquilerMensual) t).getFechaFin());
+        }
         double horas = Duration.between(t.getHoraEntrada(), reloj.ahora()).getSeconds() / 3600.0;
         return NivelAlerta.segunHoras(horas);
     }

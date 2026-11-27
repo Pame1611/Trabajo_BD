@@ -1,6 +1,7 @@
 package cochera.impresion;
 
 import cochera.modelo.Alquiler;
+import cochera.modelo.AlquilerMensual;
 import cochera.util.Dinero;
 import cochera.util.FechaUtil;
 
@@ -40,15 +41,36 @@ public class TicketEntrada extends TicketImprimible {
                 + FormatoTermico.fila("DNI CLIENTE", ticket.getCliente() == null ? "-" : ticket.getCliente().getDni())
                 + FormatoTermico.fila("VEHICULO", ticket.getDescripcionVehiculo())
                 + "\n"
-                + FormatoTermico.centro(ticket.getTarifa().getTipoVehiculo() + " S/."
-                        + Dinero.decimal(ticket.getTarifa().getPrecioHora()))
-                + FormatoTermico.centro("POR HORA (SE COBRA POR MINUTO)")
+                + tarifa()
                 + "\n"
                 + FormatoTermico.codigoBarras(ticket.getCodigoBarras());
     }
 
+    /** Por hora: precio por hora. Por mes: fechas, tarifa mensual, descuento del 10% y total del mes. */
+    private String tarifa() {
+        if (ticket instanceof AlquilerMensual) {
+            AlquilerMensual m = (AlquilerMensual) ticket;
+            double subtotal = m.calcularSubtotal(m.getFechaInicio());
+            return FormatoTermico.centro("ALQUILER MENSUAL")
+                    + FormatoTermico.fila("INICIO", FechaUtil.fecha(m.getFechaInicio()))
+                    + FormatoTermico.fila("FIN", FechaUtil.fecha(m.getFechaFin()))
+                    + FormatoTermico.fila(ticket.getTarifa().getTipoVehiculo(), "S/." + Dinero.decimal(subtotal))
+                    + FormatoTermico.fila("DSCTO 10%", "-S/." + Dinero.decimal(m.calcularDescuento(m.getFechaInicio())))
+                    + FormatoTermico.fila("TOTAL DEL MES", "S/." + Dinero.decimal(m.calcularMonto(m.getFechaInicio())));
+        }
+        return FormatoTermico.centro(ticket.getTarifa().getTipoVehiculo() + " S/."
+                + Dinero.decimal(ticket.getTarifa().getPrecioHora()))
+                + FormatoTermico.centro("POR HORA (SE COBRA POR MINUTO)");
+    }
+
     @Override
     protected String pie() {
+        if (ticket instanceof AlquilerMensual) {
+            return "Condiciones:\n"
+                    + "- No perder el ticket\n"
+                    + "* Alquiler por 30 dias con 10%\n"
+                    + "de descuento por vehiculo.\n";
+        }
         return "Condiciones:\n"
                 + "- No perder el ticket\n"
                 + "* Se cobra por minuto segun la\n"

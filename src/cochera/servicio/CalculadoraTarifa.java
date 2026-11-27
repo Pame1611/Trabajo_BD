@@ -2,6 +2,7 @@ package cochera.servicio;
 
 import cochera.dto.ResultadoTarifa;
 import cochera.modelo.Alquiler;
+import cochera.modelo.AlquilerMensual;
 import cochera.util.Dinero;
 import java.time.LocalDateTime;
 
@@ -19,10 +20,15 @@ public class CalculadoraTarifa {
         return Dinero.redondear(Math.max(0, minutos) * precioHora / 60.0);
     }
 
-    /** Calcula con la tarifa vigente del tipo de vehículo del alquiler. */
+    /**
+     * Calcula con la tarifa vigente del tipo de vehículo del alquiler.
+     * POLIMORFISMO: calcularMonto(), calcularSubtotal() y calcularDescuento() se ejecutan
+     * según el objeto real (Alquiler por hora o AlquilerMensual con 10% de descuento).
+     */
     public ResultadoTarifa calcular(Alquiler alquiler, LocalDateTime ahora) {
-        double total = alquiler.calcularMonto(ahora);
+        int meses = alquiler instanceof AlquilerMensual ? ((AlquilerMensual) alquiler).mesesHasta(ahora) : 0;
         return new ResultadoTarifa(alquiler.minutosHasta(ahora), alquiler.getTarifa().getPrecioHora(),
-                total, 0, total);
+                alquiler.calcularSubtotal(ahora), alquiler.calcularDescuento(ahora), alquiler.calcularMonto(ahora),
+                alquiler.getTipoAlquiler(), meses);
     }
 }
