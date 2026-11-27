@@ -232,8 +232,13 @@ public abstract class MenuBase {
         consola.info("  Cliente:         " + (t.getCliente() == null ? "-" : t.getCliente().toString()));
         consola.info("  Ingreso:         " + FechaUtil.fechaHora(t.getHoraEntrada()));
         consola.info("  Tiempo:          " + FechaUtil.formatoMinutos(r.getMinutos()) + " (" + r.getMinutos() + " min)");
-        consola.info("  Tarifa:          " + Dinero.soles(r.getPrecioHora()) + " por hora -> "
-                + r.getMinutos() + " min x " + Dinero.decimal(r.getPrecioHora()) + " / 60");
+        if (r.esMensual()) {
+            consola.info("  Alquiler:        por mes, " + r.getMeses() + " mes(es) x "
+                    + Dinero.soles(t.getTarifa().getTarifaMensual()));
+        } else {
+            consola.info("  Tarifa:          " + Dinero.soles(r.getPrecioHora()) + " por hora -> "
+                    + r.getMinutos() + " min x " + Dinero.decimal(r.getPrecioHora()) + " / 60");
+        }
         if (r.getDescuento() > 0) {
             consola.info("  Subtotal:        " + Dinero.soles(r.getSubtotal()));
             consola.info("  Descuento:       -" + Dinero.soles(r.getDescuento()));

@@ -16,6 +16,7 @@ import cochera.modelo.MetodoPago;
 import cochera.modelo.Modelo;
 import cochera.modelo.Pago;
 import cochera.modelo.Tarifa;
+import cochera.modelo.TipoAlquiler;
 import cochera.modelo.TurnoCaja;
 import cochera.servicio.CheckoutServicio;
 import cochera.servicio.CobrosServicio;
@@ -172,7 +173,12 @@ public class MenuEmpleado extends MenuBase {
             consola.info("  Tipo de vehiculo del modelo: " + tarifa);
         }
 
-        Alquiler ticket = ctx.getCheckin().registrarEntrada(dni, nombre, placa, modelo.getId(), tarifa.getId());
+        consola.info("  Modalidad: 1. " + TipoAlquiler.POR_HORA + "   2. " + TipoAlquiler.MENSUAL
+                + " (tarifa mensual " + Dinero.soles(tarifa.getTarifaMensual()) + ")");
+        TipoAlquiler tipo = leerOpcional("Modalidad (ENTER = por hora): ", 2) == 1 ? TipoAlquiler.MENSUAL
+                : TipoAlquiler.POR_HORA;
+
+        Alquiler ticket = ctx.getCheckin().registrarEntrada(dni, nombre, placa, modelo.getId(), tarifa.getId(), tipo);
         consola.exito("Entrada registrada: " + ticket.getCodigoBarras() + " | " + ticket.getPlacaFormateada()
                 + " | " + tarifa.getTipoVehiculo() + " | " + FechaUtil.hora(ticket.getHoraEntrada()));
         imprimir(new TicketEntrada(ticket));

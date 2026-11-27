@@ -63,8 +63,13 @@ public final class Dialogos {
         sb.append("Ingreso: ").append(FechaUtil.fechaHora(t.getHoraEntrada())).append('\n');
         sb.append("Tiempo: ").append(FechaUtil.formatoMinutos(r.getMinutos())).append('\n');
         sb.append("Cliente: ").append(t.getCliente() == null ? "-" : t.getCliente().toString()).append('\n');
-        sb.append("Tarifa: ").append(Dinero.soles(r.getPrecioHora())).append(" por hora (")
-                .append(r.getMinutos()).append(" min x ").append(Dinero.soles(r.getPrecioHora())).append(" / 60)\n");
+        if (r.esMensual()) {
+            sb.append("Alquiler mensual: ").append(r.getMeses()).append(" mes(es) x ")
+                    .append(Dinero.soles(t.getTarifa().getTarifaMensual())).append('\n');
+        } else {
+            sb.append("Tarifa: ").append(Dinero.soles(r.getPrecioHora())).append(" por hora (")
+                    .append(r.getMinutos()).append(" min x ").append(Dinero.soles(r.getPrecioHora())).append(" / 60)\n");
+        }
         if (r.getDescuento() > 0) {
             sb.append("Subtotal: ").append(Dinero.soles(r.getSubtotal())).append('\n');
             sb.append("Descuento: -").append(Dinero.soles(r.getDescuento())).append('\n');

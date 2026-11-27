@@ -27,6 +27,7 @@ public class PerfilCajero implements PerfilVentana {
             checkout.cargar(ticket.getCodigoBarras());
         }));
         pestanas.addTab("Mis cobros", new PnlMisCobros(gui));
+        pestanas.addTab("Alquiler mensual", new PnlAlquilerMensual(gui));
     }
 
     @Override

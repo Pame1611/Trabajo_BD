@@ -7,6 +7,7 @@ import cochera.modelo.Cliente;
 import cochera.modelo.Marca;
 import cochera.modelo.Modelo;
 import cochera.modelo.Tarifa;
+import cochera.modelo.TipoAlquiler;
 import cochera.servicio.VehiculoServicio;
 import cochera.util.Dinero;
 import cochera.util.Dni;
@@ -18,7 +19,8 @@ import javax.swing.JList;
 
 /**
  * Pestaña "Check-in" (JPanel Form): registra la entrada con el DNI del cliente, la marca y
- * el modelo del vehículo (combos) y su tipo, y genera el ticket con código de barras.
+ * el modelo del vehículo (combos), su tipo y la modalidad (por hora o por mes con 10% de
+ * descuento), y genera el ticket con código de barras.
  */
 public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
 
@@ -47,6 +49,8 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
                 return this;
             }
         });
+        cboModalidad.setModel(new DefaultComboBoxModel<>(TipoAlquiler.values()));
+        cboModalidad.addActionListener(e -> mostrarTarifa());
         cboTipo.addActionListener(e -> mostrarTarifa());
         cboMarca.addActionListener(e -> cargarModelos());
         cboModelo.addActionListener(e -> aplicarTipoDelModelo());
@@ -98,11 +102,24 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
         }
     }
 
-    /** RF-ING-04: al elegir el tipo se muestra su precio. */
+    /** RF-ING-04: al elegir el tipo (y la modalidad) se muestra su precio. */
     private void mostrarTarifa() {
         Tarifa t = (Tarifa) cboTipo.getSelectedItem();
-        lblTarifaInfo.setText(t == null ? " " : t.getTipoVehiculo() + ": " + Dinero.soles(t.getPrecioHora())
-                + " por hora  ·  se cobra por minuto (" + Dinero.soles(t.getPrecioHora()) + " / 60)");
+        boolean mensual = cboModalidad.getSelectedItem() == TipoAlquiler.MENSUAL;
+        if (t == null) {
+            lblTarifaInfo.setText(" ");
+        } else if (mensual) {
+            double mes = t.getTarifaMensual();
+            lblTarifaInfo.setText(t.getTipoVehiculo() + ": tarifa mensual " + Dinero.soles(mes) + "  -  10% = "
+                    + Dinero.soles(Dinero.redondear(mes * 0.90)) + " por vehículo");
+        } else {
+            lblTarifaInfo.setText(t.getTipoVehiculo() + ": " + Dinero.soles(t.getPrecioHora())
+                    + " por hora  ·  se cobra por minuto (" + Dinero.soles(t.getPrecioHora()) + " / 60)");
+        }
+        java.time.LocalDateTime hoy = gui.getApp().getReloj().ahora();
+        lblModalidadInfo.setText(mensual
+                ? "Del " + FechaUtil.fecha(hoy) + " al " + FechaUtil.fecha(hoy.plusDays(30)) + " (30 días)."
+                : "Se cobra al salir según los minutos.");
     }
 
     /** RF-ING-05: busca al cliente por DNI; si no existe se registrará al guardar la entrada. */
@@ -139,17 +156,20 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
         final String placa = txtPlaca.getText();
         final String dni = txtDni.getText();
         final String nombre = txtNombre.isEnabled() ? txtNombre.getText() : "";
+        final TipoAlquiler modalidad = (TipoAlquiler) cboModalidad.getSelectedItem();
         gui.ejecutar(this, () -> {
             Alquiler t = gui.getApp().getCheckin().registrarEntrada(dni, nombre, placa,
-                    modelo == null ? 0 : modelo.getId(), tarifa == null ? 0 : tarifa.getId());
+                    modelo == null ? 0 : modelo.getId(), tarifa == null ? 0 : tarifa.getId(), modalidad);
             ultimo = t;
-            lblUltimo.setText(t.getCodigoBarras() + "   ·   " + t.getPlacaFormateada() + "   ·   "
+            lblUltimo.setText((t.getTipoAlquiler() == TipoAlquiler.MENSUAL ? "MENSUAL   ·   " : "")
+                    + t.getCodigoBarras() + "   ·   " + t.getPlacaFormateada() + "   ·   "
                     + t.getDescripcionVehiculo() + " (" + t.getTarifa().getTipoVehiculo() + ")   ·   "
                     + t.getCliente().getNombreCompleto() + "   ·   " + FechaUtil.hora(t.getHoraEntrada()));
             btnReimprimir.setEnabled(true);
             txtPlaca.setText("");
             txtDni.setText("");
             cboMarca.setSelectedIndex(0); // vuelve a "Desconocido"
+            cboModalidad.setSelectedItem(TipoAlquiler.POR_HORA);
             gui.imprimir(this, new TicketEntrada(t));
         });
         txtDni.requestFocusInWindow();
@@ -181,6 +201,9 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
         cboMarca = new javax.swing.JComboBox<>();
         lblModelo = new javax.swing.JLabel();
         cboModelo = new javax.swing.JComboBox<>();
+        lblModalidad = new javax.swing.JLabel();
+        cboModalidad = new javax.swing.JComboBox<>();
+        lblModalidadInfo = new javax.swing.JLabel();
         lblTipo = new javax.swing.JLabel();
         cboTipo = new javax.swing.JComboBox<>();
         lblTarifaInfo = new javax.swing.JLabel();
@@ -224,7 +247,7 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
 
         lblSecCliente.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblSecCliente.setForeground(new java.awt.Color(113, 113, 122));
-        lblSecCliente.setText("CLIENTE");
+        lblSecCliente.setText("CLIENTE Y ALQUILER");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
@@ -362,6 +385,34 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
         gridBagConstraints.insets = new java.awt.Insets(6, 24, 0, 0);
         pnlFormulario.add(cboModelo, gridBagConstraints);
 
+        lblModalidad.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        lblModalidad.setText("Modalidad del alquiler");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(12, 0, 0, 0);
+        pnlFormulario.add(lblModalidad, gridBagConstraints);
+
+        cboModalidad.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 8;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 0.5;
+        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        pnlFormulario.add(cboModalidad, gridBagConstraints);
+
+        lblModalidadInfo.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
+        lblModalidadInfo.setForeground(new java.awt.Color(113, 113, 122));
+        lblModalidadInfo.setText(" ");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 9;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        pnlFormulario.add(lblModalidadInfo, gridBagConstraints);
+
         lblTipo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         lblTipo.setText("Tipo de vehículo");
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -493,12 +544,15 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
     private javax.swing.JButton btnRegistrar;
     private javax.swing.JButton btnReimprimir;
     private javax.swing.JComboBox<cochera.modelo.Marca> cboMarca;
+    private javax.swing.JComboBox<cochera.modelo.TipoAlquiler> cboModalidad;
     private javax.swing.JComboBox<cochera.modelo.Modelo> cboModelo;
     private javax.swing.JComboBox<cochera.modelo.Tarifa> cboTipo;
     private javax.swing.JLabel lblAviso;
     private javax.swing.JLabel lblCliente;
     private javax.swing.JLabel lblDni;
     private javax.swing.JLabel lblMarca;
+    private javax.swing.JLabel lblModalidad;
+    private javax.swing.JLabel lblModalidadInfo;
     private javax.swing.JLabel lblModelo;
     private javax.swing.JLabel lblNombre;
     private javax.swing.JLabel lblPlaca;

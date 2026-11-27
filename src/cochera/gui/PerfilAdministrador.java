@@ -26,6 +26,7 @@ public class PerfilAdministrador implements PerfilVentana {
         pestanas.addTab("Usuarios", new PnlUsuarios(gui));
         pestanas.addTab("Clientes", new PnlClientes(gui));
         pestanas.addTab("Marcas y modelos", new PnlMarcasModelos(gui));
+        pestanas.addTab("Alquiler mensual", new PnlAlquilerMensual(gui));
     }
 
     @Override

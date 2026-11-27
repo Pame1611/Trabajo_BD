@@ -7,6 +7,7 @@ import cochera.excepcion.CocheraException;
 import cochera.excepcion.ValidacionException;
 import cochera.impresion.TicketSalida;
 import cochera.modelo.Alquiler;
+import cochera.modelo.AlquilerMensual;
 import cochera.modelo.MetodoPago;
 import cochera.modelo.Pago;
 import cochera.servicio.CheckoutServicio;
@@ -118,9 +119,21 @@ public class PnlCheckout extends javax.swing.JPanel implements Refrescable {
         lblVVehiculo.setText(t.getTarifa().getTipoVehiculo());
         lblVIngreso.setText(FechaUtil.fechaHora(t.getHoraEntrada()));
         lblVTiempo.setText(FechaUtil.formatoMinutos(r.getMinutos()));
-        lblVBase.setText(Dinero.soles(r.getPrecioHora()) + " (" + t.getTarifa().getTipoVehiculo() + ")");
-        lblVExtra.setText(r.getMinutos() + " min x " + Dinero.soles(r.getPrecioHora()) + " / 60 = "
-                + Dinero.soles(r.getSubtotal()));
+        if (r.esMensual()) {
+            AlquilerMensual m = (AlquilerMensual) t;
+            lblDBase.setText("Tarifa mensual");
+            lblVBase.setText(Dinero.soles(t.getTarifa().getTarifaMensual()) + " (" + t.getTarifa().getTipoVehiculo()
+                    + ")   ·   del " + FechaUtil.fecha(m.getFechaInicio()) + " al " + FechaUtil.fecha(m.getFechaFin()));
+            lblDExtra.setText("Descuento 10%");
+            lblVExtra.setText(r.getMeses() + " mes(es) = " + Dinero.soles(r.getSubtotal()) + "  -  "
+                    + Dinero.soles(r.getDescuento()) + " (10%) = " + Dinero.soles(r.getTarifaTotal()));
+        } else {
+            lblDBase.setText("Precio por hora");
+            lblVBase.setText(Dinero.soles(r.getPrecioHora()) + " (" + t.getTarifa().getTipoVehiculo() + ")");
+            lblDExtra.setText("Cálculo");
+            lblVExtra.setText(r.getMinutos() + " min x " + Dinero.soles(r.getPrecioHora()) + " / 60 = "
+                    + Dinero.soles(r.getSubtotal()));
+        }
         lblTotal.setText(Dinero.soles(r.getTarifaTotal()));
         btnCobrar.setText("Cobrar " + Dinero.soles(r.getTarifaTotal()));
         rbEfectivo.setSelected(true);

@@ -256,12 +256,14 @@ public class MenuAdministrador extends MenuBase {
             consola.subtitulo("TARIFARIO (tarifa por hora; se cobra por minuto = tarifa / 60)");
             for (Tarifa t : tarifas) {
                 consola.info("  " + Texto.izquierda(String.valueOf(t.getId()), 2) + ". " + Texto.columna(t.getTipoVehiculo(), 30)
-                        + " Por hora: " + Dinero.soles(t.getPrecioHora()));
+                        + " Por hora: " + Texto.izquierda(Dinero.soles(t.getPrecioHora()), 9)
+                        + "   Mensual: " + Dinero.soles(t.getTarifaMensual()));
             }
             if (consola.confirmar("Agregar un nuevo tipo de vehiculo?")) {
                 String nombre = consola.leerObligatorio("Nombre del tipo: ");
                 double precio = consola.leerDecimal("Tarifa por hora: S/ ");
-                ejecutar(() -> consola.exito("Tipo agregado: " + ctx.getVehiculos().agregarTipoVehiculo(nombre, precio)));
+                double mensual = consola.leerDecimal("Tarifa mensual: S/ ");
+                ejecutar(() -> consola.exito("Tipo agregado: " + ctx.getVehiculos().agregarTipoVehiculo(nombre, precio, mensual)));
                 continue;
             }
             int id = consola.leerEntero("ID de la tarifa a editar (0 = volver): ", 0, tarifas.get(tarifas.size() - 1).getId());
@@ -270,9 +272,11 @@ public class MenuAdministrador extends MenuBase {
             }
             Tarifa t = ctx.getBaseDatos().buscarTarifa(id);
             Double precio = consola.leerDecimalOpcional("Nueva tarifa por hora (ENTER = " + Dinero.decimal(t.getPrecioHora()) + "): S/ ");
+            Double mensual = consola.leerDecimalOpcional("Nueva tarifa mensual (ENTER = " + Dinero.decimal(t.getTarifaMensual()) + "): S/ ");
             final double nuevoPrecio = precio == null ? t.getPrecioHora() : precio;
+            final double nuevoMensual = mensual == null ? t.getTarifaMensual() : mensual;
             ejecutar(() -> {
-                Tarifa actualizada = ctx.getAdmin().actualizarTarifa(id, nuevoPrecio);
+                Tarifa actualizada = ctx.getAdmin().actualizarTarifa(id, nuevoPrecio, nuevoMensual);
                 consola.exito("Tarifa actualizada: " + actualizada);
             });
         }
