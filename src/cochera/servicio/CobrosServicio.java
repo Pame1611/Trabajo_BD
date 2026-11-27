@@ -6,9 +6,9 @@ import cochera.dto.ResumenPagos;
 import cochera.excepcion.AccesoDenegadoException;
 import cochera.excepcion.CocheraException;
 import cochera.excepcion.ValidacionException;
+import cochera.modelo.Alquiler;
 import cochera.modelo.MetodoPago;
 import cochera.modelo.Pago;
-import cochera.modelo.TicketCochera;
 import cochera.modelo.TurnoCaja;
 import cochera.modelo.Usuario;
 import cochera.util.Placa;
@@ -51,12 +51,12 @@ public class CobrosServicio {
     }
 
     /** Tickets cuyo cobro pertenece a este turno. */
-    public List<TicketCochera> obtenerTicketsTurno() throws CocheraException {
-        List<TicketCochera> tickets = new ArrayList<>();
+    public List<Alquiler> obtenerTicketsTurno() throws CocheraException {
+        List<Alquiler> tickets = new ArrayList<>();
         for (Pago p : obtenerPagosTurno()) {
             tickets.add(p.getTicket());
         }
-        tickets.sort(Comparator.comparing(TicketCochera::getHoraEntrada).reversed());
+        tickets.sort(Comparator.comparing(Alquiler::getHoraEntrada).reversed());
         return tickets;
     }
 

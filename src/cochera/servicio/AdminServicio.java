@@ -10,11 +10,11 @@ import cochera.dto.ReporteTurno;
 import cochera.dto.ResumenPagos;
 import cochera.excepcion.CocheraException;
 import cochera.excepcion.ValidacionException;
+import cochera.modelo.Alquiler;
 import cochera.modelo.Empleado;
 import cochera.modelo.EstadoTicket;
 import cochera.modelo.Pago;
 import cochera.modelo.Tarifa;
-import cochera.modelo.TicketCochera;
 import cochera.modelo.TurnoCaja;
 import cochera.modelo.Usuario;
 import cochera.util.Dinero;
@@ -125,7 +125,7 @@ public class AdminServicio {
     }
 
     /** Anula el ticket; el pago queda como registro histórico. */
-    public void anularTicket(TicketCochera ticket) throws CocheraException {
+    public void anularTicket(Alquiler ticket) throws CocheraException {
         auth.requerirAdmin();
         if (ticket == null) {
             throw new ValidacionException("Ticket no encontrado.");
@@ -143,15 +143,15 @@ public class AdminServicio {
         return bd.listarTarifas();
     }
 
-    /** Solo cambia precios de una categoría existente; no crea ni elimina categorías. */
-    public Tarifa actualizarTarifa(int id, double costoBase, double sobrecargoHora) throws CocheraException {
+    /** Cambia la tarifa por hora de un tipo de vehículo existente. Rechaza precios negativos. */
+    public Tarifa actualizarTarifa(int id, double precioHora) throws CocheraException {
         auth.requerirAdmin();
         Tarifa tarifa = bd.buscarTarifa(id);
         if (tarifa == null) {
             throw new ValidacionException("Tarifa no encontrada.");
         }
         try {
-            tarifa.actualizarPrecios(costoBase, sobrecargoHora);
+            tarifa.actualizarPrecio(precioHora);
         } catch (IllegalArgumentException e) {
             throw new ValidacionException(e.getMessage());
         }
@@ -169,7 +169,7 @@ public class AdminServicio {
 
         List<FilaExport> filas = new ArrayList<>();
         for (Pago p : pagos) {
-            TicketCochera t = p.getTicket();
+            Alquiler t = p.getTicket();
             String tipo = t.getTarifa().getTipoVehiculo();
             String nombreEmpleado = p.getTurno().getEmpleado().getNombreCompleto();
             if (!dentroDeRango(p.getCreadoEn(), desde, hasta)
@@ -179,7 +179,6 @@ public class AdminServicio {
             }
             LocalDateTime salida = t.getHoraSalida() != null ? t.getHoraSalida() : p.getCreadoEn();
             long minutos = Math.max(0, FechaUtil.minutosEntre(t.getHoraEntrada(), salida));
-            double base = t.getTarifa().getCostoBase();
             filas.add(new FilaExport(
                     t.getCodigoBarras(),
                     FechaUtil.fecha(p.getCreadoEn()),
@@ -189,8 +188,8 @@ public class AdminServicio {
                     FechaUtil.fechaHora(salida),
                     (minutos / 60) + "h " + (minutos % 60) + "m",
                     minutos,
-                    base,
-                    Dinero.redondear(Math.max(0, p.getMontoTotal() - base)),
+                    t.getTarifa().getPrecioHora(),
+                    t.getCliente() == null ? "" : t.getCliente().getDni(),
                     p.getMontoTotal(),
                     p.getMetodoPago().getEtiqueta(),
                     t.getEstado().name(),

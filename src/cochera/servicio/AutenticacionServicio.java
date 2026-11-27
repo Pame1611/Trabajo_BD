@@ -7,12 +7,12 @@ import cochera.excepcion.ValidacionException;
 import cochera.modelo.Administrador;
 import cochera.modelo.Empleado;
 import cochera.modelo.Usuario;
+import cochera.util.Dni;
 import cochera.util.Reloj;
-import cochera.util.Texto;
 import java.util.List;
 
 /**
- * Inicio/cierre de sesión y control de acceso por rol (auth.ts + proxy.ts + RLS es_admin()).
+ * Inicio/cierre de sesión con DNI y contraseña, y control de acceso por rol.
  */
 public class AutenticacionServicio {
 
@@ -27,16 +27,31 @@ public class AutenticacionServicio {
         this.reloj = reloj;
     }
 
-    public Usuario iniciarSesion(String email, String password) throws CocheraException {
-        if (Texto.vacio(email) || password == null || password.isEmpty()) {
-            throw new ValidacionException("Completa todos los campos.");
+    /**
+     * ValidarAcceso: inicia sesión con el DNI y la contraseña del empleado.
+     * Rechaza campos vacíos, un DNI mal escrito o datos incorrectos, indicando el motivo.
+     */
+    public Usuario validarAcceso(String dni, String password) throws CocheraException {
+        if (Dni.normalizar(dni).isEmpty() || password == null || password.isEmpty()) {
+            throw new ValidacionException("Completa el DNI y la contraseña.");
         }
-        Usuario u = bd.buscarUsuarioPorEmail(email);
+        String dniNorm = Dni.validar(dni, "del empleado");
+        Usuario u = bd.buscarUsuarioPorDni(dniNorm);
         if (u == null || !u.verificarPassword(password)) {
-            throw new AccesoDenegadoException("Correo o contraseña incorrectos.");
+            throw new AccesoDenegadoException("DNI o contraseña incorrectos.");
         }
         usuarioActual = u;
         return u;
+    }
+
+    /** Al escribir el DNI y presionar Enter, el login muestra el nombre del empleado. */
+    public String nombrePorDni(String dni) throws ValidacionException {
+        String dniNorm = Dni.validar(dni, "del empleado");
+        Usuario u = bd.buscarUsuarioPorDni(dniNorm);
+        if (u == null) {
+            throw new ValidacionException("No hay ningún empleado con el DNI " + dniNorm + ".");
+        }
+        return u.getNombreCompleto();
     }
 
     public void cerrarSesion() {
@@ -75,18 +90,16 @@ public class AutenticacionServicio {
     }
 
     /**
-     * Alta de un nuevo cajero (solo ADMIN). Todo usuario nuevo nace con rol EMPLEADO,
-     * igual que el trigger handle_new_user() de la base de datos.
+     * Alta de un nuevo cajero (solo ADMIN). No hay registro público: solo el administrador crea cuentas.
+     * El DNI debe tener 8 dígitos y no repetirse; la contraseña, al menos 6 caracteres.
      */
-    public Empleado registrarEmpleado(String email, String password, String nombreCompleto) throws CocheraException {
+    public Empleado registrarEmpleado(String dni, String password, String nombreCompleto) throws CocheraException {
         requerirAdmin();
-        if (Texto.vacio(email) || !email.contains("@") || email.trim().contains(" ")) {
-            throw new ValidacionException("Ingresa un correo válido.");
-        }
+        String dniNorm = Dni.validar(dni, "del empleado");
         if (password == null || password.length() < LONGITUD_MINIMA_CLAVE) {
             throw new ValidacionException("La contraseña debe tener al menos " + LONGITUD_MINIMA_CLAVE + " caracteres.");
         }
-        Empleado nuevo = new Empleado(email, password, nombreCompleto, reloj.ahora());
+        Empleado nuevo = new Empleado(dniNorm, password, nombreCompleto, reloj.ahora());
         bd.insertarUsuario(nuevo);
         return nuevo;
     }

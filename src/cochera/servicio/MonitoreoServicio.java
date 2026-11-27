@@ -3,8 +3,8 @@ package cochera.servicio;
 import cochera.datos.BaseDatos;
 import cochera.excepcion.AccesoDenegadoException;
 import cochera.excepcion.CocheraException;
+import cochera.modelo.Alquiler;
 import cochera.modelo.Tarifa;
-import cochera.modelo.TicketCochera;
 import cochera.modelo.Usuario;
 import cochera.util.FechaUtil;
 import cochera.util.Placa;
@@ -35,21 +35,21 @@ public class MonitoreoServicio {
     }
 
     /** ADMIN ve siempre; el EMPLEADO necesita turno abierto. Ordenado del ingreso más reciente al más antiguo. */
-    public List<TicketCochera> listarAutosDentro() throws CocheraException {
+    public List<Alquiler> listarAutosDentro() throws CocheraException {
         Usuario u = auth.requerirSesion();
         if (!u.esAdministrador() && turnos.obtenerTurnoAbierto() == null) {
             throw new AccesoDenegadoException("Debes abrir tu turno para ver los autos dentro.");
         }
-        List<TicketCochera> lista = bd.listarTicketsEnCurso();
-        lista.sort(Comparator.comparing(TicketCochera::getHoraEntrada).reversed());
+        List<Alquiler> lista = bd.listarTicketsEnCurso();
+        lista.sort(Comparator.comparing(Alquiler::getHoraEntrada).reversed());
         return lista;
     }
 
     /** Filtra por texto de placa y/o por tipo de vehículo (null = todos). */
-    public List<TicketCochera> filtrar(List<TicketCochera> lista, String textoPlaca, Tarifa tipo) {
+    public List<Alquiler> filtrar(List<Alquiler> lista, String textoPlaca, Tarifa tipo) {
         String f = Placa.normalizar(textoPlaca);
-        List<TicketCochera> resultado = new ArrayList<>();
-        for (TicketCochera t : lista) {
+        List<Alquiler> resultado = new ArrayList<>();
+        for (Alquiler t : lista) {
             boolean coincidePlaca = f.isEmpty() || t.getPlaca().contains(f);
             boolean coincideTipo = tipo == null || t.getTarifa().getId() == tipo.getId();
             if (coincidePlaca && coincideTipo) {
@@ -59,17 +59,17 @@ public class MonitoreoServicio {
         return resultado;
     }
 
-    public String tiempoTranscurrido(TicketCochera t) {
+    public String tiempoTranscurrido(Alquiler t) {
         return FechaUtil.tiempoTranscurrido(t.getHoraEntrada(), reloj.ahora());
     }
 
-    public NivelAlerta nivelAlerta(TicketCochera t) {
+    public NivelAlerta nivelAlerta(Alquiler t) {
         double horas = Duration.between(t.getHoraEntrada(), reloj.ahora()).getSeconds() / 3600.0;
         return NivelAlerta.segunHoras(horas);
     }
 
     /** Lo que pagaría si saliera en este momento. */
-    public double montoEstimado(TicketCochera t) {
+    public double montoEstimado(Alquiler t) {
         return calculadora.calcular(t, reloj.ahora()).getTarifaTotal();
     }
 }

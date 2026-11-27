@@ -1,53 +1,28 @@
 package cochera.servicio;
 
 import cochera.dto.ResultadoTarifa;
-import cochera.modelo.TicketCochera;
+import cochera.modelo.Alquiler;
 import cochera.util.Dinero;
-import cochera.util.FechaUtil;
 import java.time.LocalDateTime;
 
 /**
- * FUENTE DE VERDAD ÚNICA del cálculo de tarifas (lib/tarifa.ts).
+ * Arma el detalle del cobro de un alquiler para mostrarlo en pantalla y en el ticket.
  *
- * Regla de "bloques de 12 horas" (aprobada 2026-07-15):
- *   k     = bloques completos de 12 h transcurridos.
- *   Si k == 0  -> se cobra la tarifa base (TB), sin importar cuánto tiempo pasó.
- *   Si k >= 1:
- *       hExt = horas restantes después del último bloque completo.
- *       Si hExt <= 0.5 (30 min de gracia) -> cRem = 0.
- *       Si hExt >  0.5 -> cRem = min(ceil(hExt) * S, TB).
- *       total = TB * k + cRem.
+ * La regla de cobro vive en el modelo: {@link Alquiler#calcularMonto(LocalDateTime)}
+ * = minutos de permanencia x tarifa por minuto (tarifa por hora / 60).
+ * Aquí solo se llama a ese método y se agregan los datos para mostrar.
  */
 public class CalculadoraTarifa {
 
-    public static final double HORAS_POR_BLOQUE = 12.0;
-    public static final double HORAS_DE_GRACIA = 0.5;
-
-    public ResultadoTarifa calcular(LocalDateTime entrada, LocalDateTime ahora, double costoBase, double sobrecargoHora) {
-        long minutos = Math.max(0, FechaUtil.minutosEntre(entrada, ahora));
-        double t = minutos / 60.0;                         // horas totales (decimal)
-        long k = (long) Math.floor(t / HORAS_POR_BLOQUE);  // bloques completos de 12 h
-        double hExt = t - k * HORAS_POR_BLOQUE;            // horas del bloque en curso
-
-        double total;
-        double cRem = 0;
-        int horasExtra = 0;
-
-        if (k == 0) {
-            total = costoBase;                             // menos de 12 h: tarifa base fija
-        } else {
-            if (hExt > HORAS_DE_GRACIA) {
-                horasExtra = (int) Math.ceil(hExt);
-                cRem = Math.min(horasExtra * sobrecargoHora, costoBase); // tope: no supera la tarifa base
-            }
-            total = costoBase * k + cRem;
-        }
-        return new ResultadoTarifa(minutos, Math.max(1, k), Dinero.redondear(total), horasExtra, Dinero.redondear(cRem));
+    /** Monto por minutos: minutos x tarifa por hora / 60, redondeado a céntimos. */
+    public static double montoPorMinutos(long minutos, double precioHora) {
+        return Dinero.redondear(Math.max(0, minutos) * precioHora / 60.0);
     }
 
-    /** Calcula con la tarifa vigente del tipo de vehículo del ticket. */
-    public ResultadoTarifa calcular(TicketCochera ticket, LocalDateTime ahora) {
-        return calcular(ticket.getHoraEntrada(), ahora,
-                ticket.getTarifa().getCostoBase(), ticket.getTarifa().getSobrecargoHora());
+    /** Calcula con la tarifa vigente del tipo de vehículo del alquiler. */
+    public ResultadoTarifa calcular(Alquiler alquiler, LocalDateTime ahora) {
+        double total = alquiler.calcularMonto(ahora);
+        return new ResultadoTarifa(alquiler.minutosHasta(ahora), alquiler.getTarifa().getPrecioHora(),
+                total, 0, total);
     }
 }

@@ -10,10 +10,12 @@ import cochera.servicio.AutenticacionServicio;
 import cochera.servicio.CalculadoraTarifa;
 import cochera.servicio.CheckinServicio;
 import cochera.servicio.CheckoutServicio;
+import cochera.servicio.ClienteServicio;
 import cochera.servicio.CobrosServicio;
 import cochera.servicio.ExportadorCSV;
 import cochera.servicio.MonitoreoServicio;
 import cochera.servicio.TurnoServicio;
+import cochera.servicio.VentaServicio;
 import cochera.util.Reloj;
 import java.io.File;
 
@@ -28,6 +30,8 @@ public class ContextoAplicacion {
     private final CalculadoraTarifa calculadora = new CalculadoraTarifa();
     private final AutenticacionServicio auth;
     private final TurnoServicio turnos;
+    private final ClienteServicio clientes;
+    private final VentaServicio ventas;
     private final CheckinServicio checkin;
     private final CheckoutServicio checkout;
     private final CobrosServicio cobros;
@@ -53,8 +57,10 @@ public class ContextoAplicacion {
         }
         auth = new AutenticacionServicio(baseDatos, reloj);
         turnos = new TurnoServicio(baseDatos, reloj, auth);
-        checkin = new CheckinServicio(baseDatos, reloj, turnos);
-        checkout = new CheckoutServicio(baseDatos, reloj, auth, turnos, calculadora);
+        clientes = new ClienteServicio(baseDatos, reloj, auth);
+        ventas = new VentaServicio(baseDatos, auth);
+        checkin = new CheckinServicio(baseDatos, reloj, turnos, clientes);
+        checkout = new CheckoutServicio(baseDatos, reloj, auth, turnos, calculadora, ventas);
         cobros = new CobrosServicio(baseDatos, auth, turnos);
         monitoreo = new MonitoreoServicio(baseDatos, reloj, auth, turnos, calculadora);
         admin = new AdminServicio(baseDatos, reloj, auth);
@@ -107,6 +113,14 @@ public class ContextoAplicacion {
 
     public TurnoServicio getTurnos() {
         return turnos;
+    }
+
+    public ClienteServicio getClientes() {
+        return clientes;
+    }
+
+    public VentaServicio getVentas() {
+        return ventas;
     }
 
     public CheckinServicio getCheckin() {
