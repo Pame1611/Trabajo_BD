@@ -258,6 +258,12 @@ public class MenuAdministrador extends MenuBase {
                 consola.info("  " + Texto.izquierda(String.valueOf(t.getId()), 2) + ". " + Texto.columna(t.getTipoVehiculo(), 30)
                         + " Por hora: " + Dinero.soles(t.getPrecioHora()));
             }
+            if (consola.confirmar("Agregar un nuevo tipo de vehiculo?")) {
+                String nombre = consola.leerObligatorio("Nombre del tipo: ");
+                double precio = consola.leerDecimal("Tarifa por hora: S/ ");
+                ejecutar(() -> consola.exito("Tipo agregado: " + ctx.getVehiculos().agregarTipoVehiculo(nombre, precio)));
+                continue;
+            }
             int id = consola.leerEntero("ID de la tarifa a editar (0 = volver): ", 0, tarifas.get(tarifas.size() - 1).getId());
             if (id == 0) {
                 return;

@@ -37,15 +37,16 @@ public class PnlAutosDentro extends javax.swing.JPanel implements Refrescable {
                 .columna("Código", Alquiler::getCodigoBarras)
                 .columna("Placa", Alquiler::getPlacaFormateada)
                 .columna("Tipo de vehículo", t -> t.getTarifa().getTipoVehiculo())
+                .columna("Marca / modelo", Alquiler::getDescripcionVehiculo)
                 .columna("Ingreso", t -> FechaUtil.fechaHora(t.getHoraEntrada()))
                 .columna("Tiempo dentro", mon::tiempoTranscurrido)
                 .columna("A cobrar ahora", t -> Dinero.soles(mon.montoEstimado(t)))
                 .columna("Alerta", t -> mon.nivelAlerta(t).getEtiqueta());
         tblAutos.setModel(modelo);
         Estilo.tabla(tblAutos);
-        Estilo.anchos(tblAutos, 140, 90, 230, 140, 110, 120, 100);
-        Estilo.derecha(tblAutos, 5);
-        Estilo.alerta(tblAutos, 6);
+        Estilo.anchos(tblAutos, 130, 80, 190, 150, 130, 100, 110, 90);
+        Estilo.derecha(tblAutos, 6);
+        Estilo.alerta(tblAutos, 7);
         Estilo.botonSecundario(btnDetalle);
         Estilo.botonPrimario(btnCobrar);
         btnCobrar.setVisible(alCobrar != null);

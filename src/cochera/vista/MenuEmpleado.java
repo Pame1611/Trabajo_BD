@@ -11,7 +11,9 @@ import cochera.impresion.TicketEntrada;
 import cochera.impresion.TicketSalida;
 import cochera.modelo.Alquiler;
 import cochera.modelo.Cliente;
+import cochera.modelo.Marca;
 import cochera.modelo.MetodoPago;
+import cochera.modelo.Modelo;
 import cochera.modelo.Pago;
 import cochera.modelo.Tarifa;
 import cochera.modelo.TurnoCaja;
@@ -162,12 +164,60 @@ public class MenuEmpleado extends MenuBase {
             throw new ValidacionException("La placa ingresada es demasiado corta.");
         }
         consola.info("  Placa: " + Placa.formatear(placa));
-        Tarifa tarifa = elegirTarifa(ctx.getCheckin().obtenerTarifario(), false);
+        Modelo modelo = elegirModelo();
+        Tarifa tarifa = modelo.getTipoVehiculo();
+        if (tarifa == null) {
+            tarifa = elegirTarifa(ctx.getCheckin().obtenerTarifario(), false);
+        } else {
+            consola.info("  Tipo de vehiculo del modelo: " + tarifa);
+        }
 
-        Alquiler ticket = ctx.getCheckin().registrarEntrada(dni, nombre, placa, tarifa.getId());
+        Alquiler ticket = ctx.getCheckin().registrarEntrada(dni, nombre, placa, modelo.getId(), tarifa.getId());
         consola.exito("Entrada registrada: " + ticket.getCodigoBarras() + " | " + ticket.getPlacaFormateada()
                 + " | " + tarifa.getTipoVehiculo() + " | " + FechaUtil.hora(ticket.getHoraEntrada()));
         imprimir(new TicketEntrada(ticket));
+    }
+
+    /** Combo de marca y combo de modelo filtrado por la marca (ENTER = Desconocido). */
+    private Modelo elegirModelo() {
+        List<Marca> marcas = ctx.getVehiculos().listarMarcas();
+        consola.info("  Marcas:");
+        for (int i = 0; i < marcas.size(); i++) {
+            consola.info("   " + Texto.izquierda(String.valueOf(i + 1), 2) + ". " + marcas.get(i).getNombre());
+        }
+        Marca marca = marcas.get(leerOpcional("Marca (ENTER = Desconocido): ", marcas.size()));
+        List<Modelo> modelos = ctx.getVehiculos().modelosDe(marca);
+        if (modelos.size() > 1) {
+            consola.info("  Modelos de " + marca.getNombre() + ":");
+            for (int i = 0; i < modelos.size(); i++) {
+                Modelo m = modelos.get(i);
+                consola.info("   " + Texto.izquierda(String.valueOf(i + 1), 2) + ". " + m.getNombre()
+                        + (m.getTipoVehiculo() == null ? "" : "  (" + m.getTipoVehiculo().getTipoVehiculo() + ")"));
+            }
+        }
+        Modelo modelo = modelos.size() > 1 ? modelos.get(leerOpcional("Modelo (ENTER = Desconocido): ", modelos.size()))
+                : modelos.get(0);
+        consola.info("  Vehiculo: " + modelo.getDescripcion());
+        return modelo;
+    }
+
+    /** Lee un número de 1..max; ENTER devuelve el primero (índice 0). */
+    private int leerOpcional(String prompt, int max) {
+        while (true) {
+            String t = consola.leerTexto(prompt).trim();
+            if (t.isEmpty()) {
+                return 0;
+            }
+            try {
+                int n = Integer.parseInt(t);
+                if (n >= 1 && n <= max) {
+                    return n - 1;
+                }
+            } catch (NumberFormatException e) {
+                // se vuelve a pedir
+            }
+            consola.error("Escribe un numero entre 1 y " + max + ".");
+        }
     }
 
     // ─────────────────────── Check-out ───────────────────────

@@ -4,7 +4,8 @@ import java.awt.Color;
 import javax.swing.JTabbedPane;
 
 /**
- * Pestañas del ADMINISTRADOR: KPIs, cierre 2 PM, auditoría, pagos, tarifario, exportación, usuarios y clientes.
+ * Pestañas del ADMINISTRADOR: KPIs, cierre 2 PM, auditoría, pagos, tarifario, exportación, usuarios,
+ * clientes y marcas/modelos.
  */
 public class PerfilAdministrador implements PerfilVentana {
 
@@ -24,6 +25,7 @@ public class PerfilAdministrador implements PerfilVentana {
         pestanas.addTab("Autos dentro", new PnlAutosDentro(gui, null));
         pestanas.addTab("Usuarios", new PnlUsuarios(gui));
         pestanas.addTab("Clientes", new PnlClientes(gui));
+        pestanas.addTab("Marcas y modelos", new PnlMarcasModelos(gui));
     }
 
     @Override
