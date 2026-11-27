@@ -55,10 +55,16 @@ public class SistemaCochera {
 
     private void iniciarSesion() {
         consola.titulo("Iniciar sesion");
-        String email = consola.leerTexto("Correo: ");
+        String dni = consola.leerTexto("DNI: ");
+        try {
+            consola.info("  Empleado: " + ctx.getAuth().nombrePorDni(dni));
+        } catch (CocheraException e) {
+            consola.error(e.getMessage());
+            return;
+        }
         String clave = consola.leerClave("Contrasena: ");
         try {
-            Usuario usuario = ctx.getAuth().iniciarSesion(email, clave);
+            Usuario usuario = ctx.getAuth().validarAcceso(dni, clave);
             consola.exito("Bienvenido(a), " + usuario.getNombreCompleto() + ".");
             MenuBase menu = crearMenuPara(usuario);
             menu.mostrar();

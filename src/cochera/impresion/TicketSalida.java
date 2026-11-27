@@ -1,7 +1,7 @@
 package cochera.impresion;
 
+import cochera.modelo.Alquiler;
 import cochera.modelo.Pago;
-import cochera.modelo.TicketCochera;
 import cochera.util.Dinero;
 import cochera.util.FechaUtil;
 import java.time.LocalDateTime;
@@ -23,13 +23,9 @@ public class TicketSalida extends TicketImprimible {
         return "Ticket de salida " + pago.getTicket().getCodigoBarras();
     }
 
-    /** Sobrecargo = total - tarifa base (nunca negativo). */
-    public double getSobrecargo() {
-        return Math.max(0, pago.getMontoTotal() - pago.getTicket().getTarifa().getCostoBase());
-    }
 
     private LocalDateTime horaSalida() {
-        TicketCochera t = pago.getTicket();
+        Alquiler t = pago.getTicket();
         return t.getHoraSalida() != null ? t.getHoraSalida() : pago.getCreadoEn();
     }
 
@@ -43,17 +39,18 @@ public class TicketSalida extends TicketImprimible {
 
     @Override
     protected String cuerpo() {
-        TicketCochera t = pago.getTicket();
+        Alquiler t = pago.getTicket();
         long minutos = FechaUtil.minutosEntre(t.getHoraEntrada(), horaSalida());
         return FormatoTermico.fila("Correlativo:", t.getCodigoBarras())
                 + FormatoTermico.fila("Placa:", t.getPlacaFormateada())
+                + FormatoTermico.fila("DNI Cliente:", t.getCliente() == null ? "-" : t.getCliente().getDni())
                 + FormatoTermico.fila("Vehiculo:", t.getTarifa().getTipoVehiculo())
                 + FormatoTermico.fila("Hora Entrada:", FechaUtil.hora(t.getHoraEntrada()))
                 + FormatoTermico.fila("Hora Salida:", FechaUtil.hora(horaSalida()))
                 + FormatoTermico.fila("Tiempo Total:", FechaUtil.formatoMinutos(minutos))
                 + FormatoTermico.separador()
-                + FormatoTermico.fila("Tarifa Base:", Dinero.soles(t.getTarifa().getCostoBase()))
-                + FormatoTermico.fila("Sobrecargo:", Dinero.soles(getSobrecargo()))
+                + FormatoTermico.fila("Precio x hora:", Dinero.soles(t.getTarifa().getPrecioHora()))
+                + FormatoTermico.fila("Minutos:", String.valueOf(minutos))
                 + FormatoTermico.centro("TOTAL: " + Dinero.soles(pago.getMontoTotal()))
                 + FormatoTermico.separador();
     }

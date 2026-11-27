@@ -253,23 +253,20 @@ public class MenuAdministrador extends MenuBase {
     private void gestionarTarifario() throws CocheraException {
         while (true) {
             List<Tarifa> tarifas = ctx.getAdmin().obtenerTarifario();
-            consola.subtitulo("TARIFARIO (tarifa base por bloque de 12 h + sobrecargo por hora extra)");
+            consola.subtitulo("TARIFARIO (tarifa por hora; se cobra por minuto = tarifa / 60)");
             for (Tarifa t : tarifas) {
                 consola.info("  " + Texto.izquierda(String.valueOf(t.getId()), 2) + ". " + Texto.columna(t.getTipoVehiculo(), 30)
-                        + " Base: " + Texto.izquierda(Dinero.soles(t.getCostoBase()), 9)
-                        + "   Hora extra: " + Dinero.soles(t.getSobrecargoHora()));
+                        + " Por hora: " + Dinero.soles(t.getPrecioHora()));
             }
             int id = consola.leerEntero("ID de la tarifa a editar (0 = volver): ", 0, tarifas.get(tarifas.size() - 1).getId());
             if (id == 0) {
                 return;
             }
             Tarifa t = ctx.getBaseDatos().buscarTarifa(id);
-            Double base = consola.leerDecimalOpcional("Nueva tarifa base (ENTER = " + Dinero.decimal(t.getCostoBase()) + "): S/ ");
-            Double extra = consola.leerDecimalOpcional("Nuevo sobrecargo por hora (ENTER = " + Dinero.decimal(t.getSobrecargoHora()) + "): S/ ");
-            final double nuevaBase = base == null ? t.getCostoBase() : base;
-            final double nuevoExtra = extra == null ? t.getSobrecargoHora() : extra;
+            Double precio = consola.leerDecimalOpcional("Nueva tarifa por hora (ENTER = " + Dinero.decimal(t.getPrecioHora()) + "): S/ ");
+            final double nuevoPrecio = precio == null ? t.getPrecioHora() : precio;
             ejecutar(() -> {
-                Tarifa actualizada = ctx.getAdmin().actualizarTarifa(id, nuevaBase, nuevoExtra);
+                Tarifa actualizada = ctx.getAdmin().actualizarTarifa(id, nuevoPrecio);
                 consola.exito("Tarifa actualizada: " + actualizada);
             });
         }
@@ -311,13 +308,13 @@ public class MenuAdministrador extends MenuBase {
     private void gestionarUsuarios() throws CocheraException {
         consola.subtitulo("USUARIOS");
         for (Usuario u : ctx.getAuth().listarUsuarios()) {
-            consola.info("  " + Texto.columna(u.getNombreCompleto(), 24) + Texto.derecha(u.getEmail(), 26) + u.getRol());
+            consola.info("  " + Texto.columna(u.getNombreCompleto(), 24) + Texto.derecha(u.getDni(), 12) + u.getRol());
         }
         if (consola.confirmar("Registrar un nuevo empleado (cajero)?")) {
-            String email = consola.leerObligatorio("Correo: ");
+            String dni = consola.leerObligatorio("DNI (8 digitos): ");
             String nombre = consola.leerObligatorio("Nombre completo: ");
             String clave = consola.leerClave("Contrasena (min. 6 caracteres): ");
-            Usuario nuevo = ctx.getAuth().registrarEmpleado(email, clave, nombre);
+            Usuario nuevo = ctx.getAuth().registrarEmpleado(dni, clave, nombre);
             consola.exito("Empleado registrado: " + nuevo);
         }
     }

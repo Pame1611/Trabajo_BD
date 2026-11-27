@@ -19,7 +19,7 @@ public class PnlUsuarios extends javax.swing.JPanel implements Refrescable {
         initComponents();
         modelo = new ModeloTabla<Usuario>()
                 .columna("Nombre", Usuario::getNombreCompleto)
-                .columna("Correo", Usuario::getEmail)
+                .columna("DNI", Usuario::getDni)
                 .columna("Rol", u -> u.esAdministrador() ? "Administrador" : "Cajero (EMPLEADO)")
                 .columna("Creado", u -> FechaUtil.fechaHora(u.getCreadoEn()));
         tblUsuarios.setModel(modelo);
@@ -45,8 +45,8 @@ public class PnlUsuarios extends javax.swing.JPanel implements Refrescable {
         tblUsuarios = new javax.swing.JTable();
         pnlNuevo = new javax.swing.JPanel();
         lblTitulo = new javax.swing.JLabel();
-        lblCorreo = new javax.swing.JLabel();
-        txtCorreo = new javax.swing.JTextField();
+        lblDni = new javax.swing.JLabel();
+        txtDni = new javax.swing.JTextField();
         lblNombre = new javax.swing.JLabel();
         txtNombre = new javax.swing.JTextField();
         lblClave = new javax.swing.JLabel();
@@ -76,24 +76,24 @@ public class PnlUsuarios extends javax.swing.JPanel implements Refrescable {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         pnlNuevo.add(lblTitulo, gridBagConstraints);
 
-        lblCorreo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
-        lblCorreo.setText("Correo");
+        lblDni.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        lblDni.setText("DNI (8 dígitos)");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(16, 0, 0, 0);
-        pnlNuevo.add(lblCorreo, gridBagConstraints);
+        pnlNuevo.add(lblDni, gridBagConstraints);
 
-        txtCorreo.setColumns(18);
-        txtCorreo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        txtDni.setColumns(18);
+        txtDni.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(4, 0, 0, 0);
-        pnlNuevo.add(txtCorreo, gridBagConstraints);
+        pnlNuevo.add(txtDni, gridBagConstraints);
 
         lblNombre.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         lblNombre.setText("Nombre completo");
@@ -148,7 +148,7 @@ public class PnlUsuarios extends javax.swing.JPanel implements Refrescable {
 
         lblNota.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
         lblNota.setForeground(new java.awt.Color(113, 113, 122));
-        lblNota.setText("<html>Todo usuario nuevo se crea con rol EMPLEADO (igual que el trigger de la base de datos web).</html>");
+        lblNota.setText("<html>Todo usuario nuevo se crea con rol EMPLEADO (cajero) e inicia sesión con su DNI. No hay registro público: solo el administrador crea cuentas.</html>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 8;
@@ -168,14 +168,14 @@ public class PnlUsuarios extends javax.swing.JPanel implements Refrescable {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnRegistrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistrarActionPerformed
-        final String correo = txtCorreo.getText();
+        final String dni = txtDni.getText();
         final String nombre = txtNombre.getText();
         final String clave = new String(txtClave.getPassword());
         if (gui.ejecutar(this, () -> {
-            Empleado nuevo = gui.getApp().getAuth().registrarEmpleado(correo, clave, nombre);
-            Dialogos.info(this, "Empleado registrado: " + nuevo.getNombreCompleto() + "\nYa puede iniciar sesión con " + nuevo.getEmail());
+            Empleado nuevo = gui.getApp().getAuth().registrarEmpleado(dni, clave, nombre);
+            Dialogos.info(this, "Empleado registrado: " + nuevo.getNombreCompleto() + "\nYa puede iniciar sesión con su DNI " + nuevo.getDni());
         })) {
-            txtCorreo.setText("");
+            txtDni.setText("");
             txtNombre.setText("");
             txtClave.setText("");
             refrescar();
@@ -185,7 +185,7 @@ public class PnlUsuarios extends javax.swing.JPanel implements Refrescable {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnRegistrar;
     private javax.swing.JLabel lblClave;
-    private javax.swing.JLabel lblCorreo;
+    private javax.swing.JLabel lblDni;
     private javax.swing.JLabel lblNombre;
     private javax.swing.JLabel lblNota;
     private javax.swing.JLabel lblRelleno;
@@ -194,7 +194,7 @@ public class PnlUsuarios extends javax.swing.JPanel implements Refrescable {
     private javax.swing.JScrollPane scrUsuarios;
     private javax.swing.JTable tblUsuarios;
     private javax.swing.JPasswordField txtClave;
-    private javax.swing.JTextField txtCorreo;
+    private javax.swing.JTextField txtDni;
     private javax.swing.JTextField txtNombre;
     // End of variables declaration//GEN-END:variables
 }

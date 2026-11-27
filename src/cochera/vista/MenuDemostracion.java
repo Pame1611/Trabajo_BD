@@ -65,7 +65,7 @@ public class MenuDemostracion {
         consola.subtitulo("USUARIOS DE PRUEBA");
         for (Usuario u : ctx.getBaseDatos().listarUsuarios()) {
             String clave = u.esAdministrador() ? DatosIniciales.CLAVE_DEMO_ADMIN : DatosIniciales.CLAVE_DEMO_CAJERO;
-            consola.info("  " + Texto.derecha(u.getEmail(), 24) + Texto.derecha(clave, 12) + u.getNombreCompleto()
+            consola.info("  DNI " + Texto.derecha(u.getDni(), 12) + Texto.derecha(clave, 12) + u.getNombreCompleto()
                     + " (" + u.getRol() + ")");
         }
         consola.info("  (Los empleados registrados por el admin usan la clave que se les asigno.)");

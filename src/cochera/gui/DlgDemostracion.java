@@ -44,11 +44,11 @@ public class DlgDemostracion extends javax.swing.JDialog {
     private void cargarUsuarios() {
         StringBuilder sb = new StringBuilder();
         for (Usuario u : gui.getApp().getBaseDatos().listarUsuarios()) {
-            String clave = u.getEmail().endsWith("@cochera.pe") && u.getEmail().startsWith("admin")
+            String clave = u.getDni().equals(DatosIniciales.DNI_ADMIN)
                     ? DatosIniciales.CLAVE_DEMO_ADMIN
-                    : (u.getEmail().startsWith("cajero1@") || u.getEmail().startsWith("cajero2@")
+                    : (u.getDni().equals(DatosIniciales.DNI_CAJERO1) || u.getDni().equals(DatosIniciales.DNI_CAJERO2)
                     ? DatosIniciales.CLAVE_DEMO_CAJERO : "(la asignada)");
-            sb.append(Texto.derecha(u.getEmail(), 24)).append(Texto.derecha(clave, 14))
+            sb.append("DNI ").append(Texto.derecha(u.getDni(), 12)).append(Texto.derecha(clave, 14))
                     .append(u.getNombreCompleto()).append(" (").append(u.getRol()).append(")\n");
         }
         txtUsuarios.setText(sb.toString());

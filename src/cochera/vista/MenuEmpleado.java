@@ -9,13 +9,16 @@ import cochera.excepcion.CocheraException;
 import cochera.excepcion.ValidacionException;
 import cochera.impresion.TicketEntrada;
 import cochera.impresion.TicketSalida;
+import cochera.modelo.Alquiler;
+import cochera.modelo.Cliente;
 import cochera.modelo.MetodoPago;
 import cochera.modelo.Pago;
 import cochera.modelo.Tarifa;
-import cochera.modelo.TicketCochera;
 import cochera.modelo.TurnoCaja;
+import cochera.servicio.CheckoutServicio;
 import cochera.servicio.CobrosServicio;
 import cochera.util.Dinero;
+import cochera.util.Dni;
 import cochera.util.FechaUtil;
 import cochera.util.Placa;
 import cochera.util.Texto;
@@ -145,6 +148,15 @@ public class MenuEmpleado extends MenuBase {
         ctx.getTurnos().requerirTurnoAbierto(
                 "No tienes un turno abierto. Abre tu turno desde el Inicio antes de registrar entradas.");
         consola.subtitulo("CHECK-IN - REGISTRAR ENTRADA");
+        String dni = consola.leerObligatorio("DNI del cliente (8 digitos): ");
+        Cliente cliente = ctx.getClientes().buscar(dni);
+        String nombre = "";
+        if (cliente != null) {
+            consola.info("  Cliente: " + cliente.getNombreCompleto());
+        } else {
+            Dni.validar(dni, "del cliente");
+            nombre = consola.leerTexto("Cliente nuevo. Nombre completo (ENTER = sin nombre): ");
+        }
         String placa = Placa.normalizar(consola.leerObligatorio("Placa (ej. ABC-123): "));
         if (placa.length() < 3) {
             throw new ValidacionException("La placa ingresada es demasiado corta.");
@@ -152,7 +164,7 @@ public class MenuEmpleado extends MenuBase {
         consola.info("  Placa: " + Placa.formatear(placa));
         Tarifa tarifa = elegirTarifa(ctx.getCheckin().obtenerTarifario(), false);
 
-        TicketCochera ticket = ctx.getCheckin().registrarEntrada(placa, tarifa.getId());
+        Alquiler ticket = ctx.getCheckin().registrarEntrada(dni, nombre, placa, tarifa.getId());
         consola.exito("Entrada registrada: " + ticket.getCodigoBarras() + " | " + ticket.getPlacaFormateada()
                 + " | " + tarifa.getTipoVehiculo() + " | " + FechaUtil.hora(ticket.getHoraEntrada()));
         imprimir(new TicketEntrada(ticket));
@@ -163,12 +175,26 @@ public class MenuEmpleado extends MenuBase {
     private void cobrarSalida() throws CocheraException {
         ctx.getTurnos().requerirTurnoAbierto("No tienes un turno abierto. Abre tu turno desde el Inicio.");
         consola.subtitulo("CHECK-OUT - COBRAR SALIDA");
-        String entrada = consola.leerTexto("Escanea el codigo de barras o escribe la placa (ENTER = volver): ");
+        String entrada = consola.leerTexto("Escanea el codigo, escribe la placa o el DNI del cliente (ENTER = volver): ");
         if (entrada.isEmpty()) {
             return;
         }
         CotizacionSalida cotizacion;
         try {
+            if (CheckoutServicio.esDni(entrada)) {
+                List<Alquiler> delCliente = ctx.getCheckout().alquileresEnCursoDeCliente(entrada);
+                consola.info("  Vehiculos dentro de " + delCliente.get(0).getCliente().getNombreCompleto() + ":");
+                for (int i = 0; i < delCliente.size(); i++) {
+                    Alquiler a = delCliente.get(i);
+                    consola.info("  " + (i + 1) + ". " + a.getCodigoBarras() + "  " + a.getPlacaFormateada()
+                            + "  " + a.getTarifa().getTipoVehiculo());
+                }
+                int n = delCliente.size() == 1 ? 1 : consola.leerEntero("Elige el vehiculo (0 = volver): ", 0, delCliente.size());
+                if (n == 0) {
+                    return;
+                }
+                entrada = delCliente.get(n - 1).getCodigoBarras();
+            }
             cotizacion = ctx.getCheckout().buscar(entrada);
         } catch (ValidacionException e) {
             consola.error(e.getMessage());
@@ -185,7 +211,7 @@ public class MenuEmpleado extends MenuBase {
 
     /** Desde "Autos dentro" se puede cobrar directo sin volver a escribir la placa. */
     @Override
-    protected void alSeleccionarVehiculo(TicketCochera ticket) throws CocheraException {
+    protected void alSeleccionarVehiculo(Alquiler ticket) throws CocheraException {
         CotizacionSalida cotizacion = ctx.getCheckout().buscarTicket(ticket.getCodigoBarras(), null);
         mostrarCotizacion(cotizacion.getTicket(), cotizacion.getTarifa());
         if (consola.confirmar("Cobrar la salida de este vehiculo ahora?")) {
@@ -278,12 +304,12 @@ public class MenuEmpleado extends MenuBase {
     }
 
     private void listarTicketsTurno() throws CocheraException {
-        List<TicketCochera> tickets = ctx.getCobros().obtenerTicketsTurno();
+        List<Alquiler> tickets = ctx.getCobros().obtenerTicketsTurno();
         if (tickets.isEmpty()) {
             consola.info("  Aun no has cobrado tickets en este turno.");
             return;
         }
-        for (TicketCochera t : tickets) {
+        for (Alquiler t : tickets) {
             Pago p = ctx.getBaseDatos().buscarPagoDeTicket(t);
             consola.info("  " + Texto.derecha(t.getCodigoBarras(), 16) + Texto.derecha(t.getPlacaFormateada(), 9)
                     + Texto.columna(t.getTarifa().getTipoVehiculo(), 21) + " "

@@ -4,7 +4,8 @@ import cochera.excepcion.CocheraException;
 import cochera.modelo.Usuario;
 
 /**
- * Formulario de inicio de sesión (JFrame Form).
+ * Formulario de inicio de sesión (JFrame Form): DNI y contraseña, validados con ValidarAcceso.
+ * Al escribir el DNI y presionar Enter se muestra el nombre del empleado.
  */
 public class FrmLogin extends javax.swing.JFrame {
 
@@ -16,17 +17,32 @@ public class FrmLogin extends javax.swing.JFrame {
         this.gui = gui;
         initComponents();
         Estilo.botonPrimario(btnIngresar);
+        Estilo.botonSecundario(btnCancelar);
         Estilo.botonSecundario(btnDemo);
-        getRootPane().setDefaultButton(btnIngresar);
-        setSize(900, 540);
+        setSize(900, 560);
         setLocationRelativeTo(null);
     }
 
-    /** Valida el usuario con el servicio de autenticación y abre la ventana según su rol. */
+    /** RF-AUT-02: muestra el nombre del empleado dueño del DNI escrito. */
+    private void mostrarEmpleado() {
+        lblError.setText(" ");
+        try {
+            String nombre = gui.getApp().getAuth().nombrePorDni(txtDni.getText());
+            lblEmpleado.setText("Hola, " + nombre + ". Escribe tu contraseña.");
+            lblEmpleado.setForeground(Estilo.VERDE);
+            txtClave.requestFocusInWindow();
+        } catch (CocheraException e) {
+            lblEmpleado.setText(e.getMessage());
+            lblEmpleado.setForeground(Estilo.ROJO);
+            txtDni.requestFocusInWindow();
+        }
+    }
+
+    /** Valida el DNI y la contraseña con el servicio de autenticación y abre la ventana según su rol. */
     private void ingresar() {
         lblError.setText(" ");
         try {
-            Usuario usuario = gui.getApp().getAuth().iniciarSesion(txtCorreo.getText(), new String(txtClave.getPassword()));
+            Usuario usuario = gui.getApp().getAuth().validarAcceso(txtDni.getText(), new String(txtClave.getPassword()));
             dispose();
             gui.getAplicacion().abrirSesion(usuario);
         } catch (CocheraException e) {
@@ -34,6 +50,16 @@ public class FrmLogin extends javax.swing.JFrame {
             txtClave.setText("");
             txtClave.requestFocusInWindow();
         }
+    }
+
+    /** Cancelar: limpia los campos para empezar de nuevo. */
+    private void cancelar() {
+        txtDni.setText("");
+        txtClave.setText("");
+        lblError.setText(" ");
+        lblEmpleado.setText("Escribe tu DNI y presiona Enter para ver tu nombre.");
+        lblEmpleado.setForeground(Estilo.TEXTO_SUAVE);
+        txtDni.requestFocusInWindow();
     }
 
     /**
@@ -55,12 +81,14 @@ public class FrmLogin extends javax.swing.JFrame {
         pnlFormulario = new javax.swing.JPanel();
         lblTitulo = new javax.swing.JLabel();
         lblSubtitulo = new javax.swing.JLabel();
-        lblCorreo = new javax.swing.JLabel();
-        txtCorreo = new javax.swing.JTextField();
+        lblDni = new javax.swing.JLabel();
+        txtDni = new javax.swing.JTextField();
+        lblEmpleado = new javax.swing.JLabel();
         lblClave = new javax.swing.JLabel();
         txtClave = new javax.swing.JPasswordField();
         lblError = new javax.swing.JLabel();
         btnIngresar = new javax.swing.JButton();
+        btnCancelar = new javax.swing.JButton();
         lblDemoTitulo = new javax.swing.JLabel();
         lblDemo = new javax.swing.JLabel();
         btnDemo = new javax.swing.JButton();
@@ -133,7 +161,7 @@ public class FrmLogin extends javax.swing.JFrame {
         getContentPane().add(pnlMarca, java.awt.BorderLayout.WEST);
 
         pnlFormulario.setBackground(new java.awt.Color(255, 255, 255));
-        pnlFormulario.setBorder(javax.swing.BorderFactory.createEmptyBorder(48, 56, 32, 56));
+        pnlFormulario.setBorder(javax.swing.BorderFactory.createEmptyBorder(40, 56, 28, 56));
         pnlFormulario.setLayout(new java.awt.GridBagLayout());
 
         lblTitulo.setFont(new java.awt.Font("Segoe UI", 1, 26)); // NOI18N
@@ -142,44 +170,65 @@ public class FrmLogin extends javax.swing.JFrame {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         pnlFormulario.add(lblTitulo, gridBagConstraints);
 
         lblSubtitulo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblSubtitulo.setForeground(new java.awt.Color(113, 113, 122));
-        lblSubtitulo.setText("Ingresa con tu correo y contraseña.");
+        lblSubtitulo.setText("Ingresa con tu DNI y tu contraseña.");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(4, 0, 22, 0);
+        gridBagConstraints.insets = new java.awt.Insets(4, 0, 18, 0);
         pnlFormulario.add(lblSubtitulo, gridBagConstraints);
 
-        lblCorreo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
-        lblCorreo.setText("Correo");
+        lblDni.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        lblDni.setText("DNI");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        pnlFormulario.add(lblCorreo, gridBagConstraints);
+        pnlFormulario.add(lblDni, gridBagConstraints);
 
-        txtCorreo.setColumns(24);
-        txtCorreo.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
+        txtDni.setColumns(24);
+        txtDni.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
+        txtDni.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtDniActionPerformed(evt);
+            }
+        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
-        pnlFormulario.add(txtCorreo, gridBagConstraints);
+        pnlFormulario.add(txtDni, gridBagConstraints);
+
+        lblEmpleado.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        lblEmpleado.setForeground(new java.awt.Color(113, 113, 122));
+        lblEmpleado.setText("Escribe tu DNI y presiona Enter para ver tu nombre.");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        pnlFormulario.add(lblEmpleado, gridBagConstraints);
 
         lblClave.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         lblClave.setText("Contraseña");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(14, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(12, 0, 0, 0);
         pnlFormulario.add(lblClave, gridBagConstraints);
 
         txtClave.setColumns(24);
@@ -191,7 +240,8 @@ public class FrmLogin extends javax.swing.JFrame {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
@@ -202,7 +252,8 @@ public class FrmLogin extends javax.swing.JFrame {
         lblError.setText(" ");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 0);
         pnlFormulario.add(lblError, gridBagConstraints);
@@ -216,27 +267,45 @@ public class FrmLogin extends javax.swing.JFrame {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridy = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 0);
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 6);
         pnlFormulario.add(btnIngresar, gridBagConstraints);
+
+        btnCancelar.setText("Cancelar");
+        btnCancelar.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
+        btnCancelar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCancelarActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 8;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(10, 6, 0, 0);
+        pnlFormulario.add(btnCancelar, gridBagConstraints);
 
         lblDemoTitulo.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
         lblDemoTitulo.setForeground(new java.awt.Color(113, 113, 122));
-        lblDemoTitulo.setText("USUARIOS DE PRUEBA");
+        lblDemoTitulo.setText("USUARIOS DE PRUEBA (DNI / CONTRASEÑA)");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 8;
+        gridBagConstraints.gridy = 9;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(28, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(24, 0, 0, 0);
         pnlFormulario.add(lblDemoTitulo, gridBagConstraints);
 
         lblDemo.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
         lblDemo.setForeground(new java.awt.Color(24, 24, 27));
-        lblDemo.setText("<html>admin@cochera.pe  /  admin123<br>cajero1@cochera.pe  /  cajero123<br>cajero2@cochera.pe  /  cajero123</html>");
+        lblDemo.setText("<html>11111111  /  admin123  (Administrador)<br>22222222  /  cajero123  (Carlos Ramírez)<br>33333333  /  cajero123  (Maria Torres)</html>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 9;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
         pnlFormulario.add(lblDemo, gridBagConstraints);
@@ -249,16 +318,18 @@ public class FrmLogin extends javax.swing.JFrame {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(16, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(14, 0, 0, 0);
         pnlFormulario.add(btnDemo, gridBagConstraints);
 
         lblRelleno2.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblRelleno2.setText(" ");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.weighty = 1.0;
         pnlFormulario.add(lblRelleno2, gridBagConstraints);
 
@@ -268,6 +339,10 @@ public class FrmLogin extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
+    private void txtDniActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtDniActionPerformed
+        mostrarEmpleado();
+    }//GEN-LAST:event_txtDniActionPerformed
+
     private void txtClaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtClaveActionPerformed
         ingresar();
     }//GEN-LAST:event_txtClaveActionPerformed
@@ -276,18 +351,24 @@ public class FrmLogin extends javax.swing.JFrame {
         ingresar();
     }//GEN-LAST:event_btnIngresarActionPerformed
 
+    private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
+        cancelar();
+    }//GEN-LAST:event_btnCancelarActionPerformed
+
     private void btnDemoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDemoActionPerformed
         new DlgDemostracion(this, gui).setVisible(true);
     }//GEN-LAST:event_btnDemoActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnCancelar;
     private javax.swing.JButton btnDemo;
     private javax.swing.JButton btnIngresar;
     private javax.swing.JLabel lblClave;
-    private javax.swing.JLabel lblCorreo;
     private javax.swing.JLabel lblDemo;
     private javax.swing.JLabel lblDemoTitulo;
     private javax.swing.JLabel lblDireccion;
+    private javax.swing.JLabel lblDni;
+    private javax.swing.JLabel lblEmpleado;
     private javax.swing.JLabel lblError;
     private javax.swing.JLabel lblLema;
     private javax.swing.JLabel lblMarca1;
@@ -300,6 +381,6 @@ public class FrmLogin extends javax.swing.JFrame {
     private javax.swing.JPanel pnlFormulario;
     private javax.swing.JPanel pnlMarca;
     private javax.swing.JPasswordField txtClave;
-    private javax.swing.JTextField txtCorreo;
+    private javax.swing.JTextField txtDni;
     // End of variables declaration//GEN-END:variables
 }

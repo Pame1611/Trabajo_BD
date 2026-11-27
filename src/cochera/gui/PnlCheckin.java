@@ -1,9 +1,12 @@
 package cochera.gui;
 
+import cochera.excepcion.CocheraException;
 import cochera.impresion.TicketEntrada;
+import cochera.modelo.Alquiler;
+import cochera.modelo.Cliente;
 import cochera.modelo.Tarifa;
-import cochera.modelo.TicketCochera;
 import cochera.util.Dinero;
+import cochera.util.Dni;
 import cochera.util.FechaUtil;
 import java.awt.Component;
 import javax.swing.DefaultComboBoxModel;
@@ -11,14 +14,15 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.JList;
 
 /**
- * Pestaña "Check-in" (JPanel Form): registra la entrada y genera el ticket con código de barras.
+ * Pestaña "Check-in" (JPanel Form): registra la entrada con el DNI del cliente
+ * y genera el ticket con código de barras.
  */
 public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
 
     private static final long serialVersionUID = 1L;
 
     private final transient ContextoGui gui;
-    private transient TicketCochera ultimo;
+    private transient Alquiler ultimo;
 
     public PnlCheckin(ContextoGui gui) {
         this.gui = gui;
@@ -36,14 +40,16 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
                 super.getListCellRendererComponent(lista, valor, i, sel, foco);
                 if (valor instanceof Tarifa) {
                     Tarifa t = (Tarifa) valor;
-                    setText(t.getTipoVehiculo() + "     " + Dinero.soles(t.getCostoBase()) + " / 12 h");
+                    setText(t.getTipoVehiculo() + "     " + Dinero.soles(t.getPrecioHora()) + " por hora");
                 }
                 return this;
             }
         });
         cboTipo.addActionListener(e -> mostrarTarifa());
         cboTipo.setSelectedItem(gui.getApp().getBaseDatos().buscarTarifa(6)); // Auto
+        UtilForm.alCambiar(txtDni, this::mostrarCliente);
         mostrarTarifa();
+        mostrarCliente();
     }
 
     @Override
@@ -52,30 +58,64 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
         lblAviso.setVisible(!hayTurno);
         btnRegistrar.setEnabled(hayTurno);
         txtPlaca.setEnabled(hayTurno);
+        txtDni.setEnabled(hayTurno);
         if (hayTurno) {
-            txtPlaca.requestFocusInWindow();
+            txtDni.requestFocusInWindow();
         }
     }
 
+    /** RF-ING-04: al elegir el tipo se muestra su precio. */
     private void mostrarTarifa() {
         Tarifa t = (Tarifa) cboTipo.getSelectedItem();
-        lblTarifaInfo.setText(t == null ? " " : "Tarifa base " + Dinero.soles(t.getCostoBase())
-                + " por bloque de 12 h  ·  " + Dinero.soles(t.getSobrecargoHora()) + " por hora extra");
+        lblTarifaInfo.setText(t == null ? " " : t.getTipoVehiculo() + ": " + Dinero.soles(t.getPrecioHora())
+                + " por hora  ·  se cobra por minuto (" + Dinero.soles(t.getPrecioHora()) + " / 60)");
+    }
+
+    /** RF-ING-05: busca al cliente por DNI; si no existe se registrará al guardar la entrada. */
+    private void mostrarCliente() {
+        String dni = txtDni.getText().trim();
+        txtNombre.setEnabled(false);
+        if (!Dni.esValido(dni)) {
+            lblCliente.setText(dni.isEmpty() ? "Escribe el DNI (8 dígitos) y presiona Enter." : "El DNI debe tener 8 dígitos.");
+            lblCliente.setForeground(Estilo.TEXTO_SUAVE);
+            txtNombre.setText("");
+            return;
+        }
+        try {
+            Cliente c = gui.getApp().getClientes().buscar(dni);
+            if (c != null) {
+                lblCliente.setText("Cliente registrado: " + c.getNombreCompleto());
+                lblCliente.setForeground(Estilo.VERDE);
+                txtNombre.setText(c.getNombreCompleto());
+            } else {
+                lblCliente.setText("Cliente nuevo: se registrará con este DNI.");
+                lblCliente.setForeground(Estilo.AMBAR);
+                txtNombre.setText("");
+                txtNombre.setEnabled(true);
+            }
+        } catch (CocheraException e) {
+            lblCliente.setText(e.getMessage());
+            lblCliente.setForeground(Estilo.ROJO);
+        }
     }
 
     private void registrar() {
         final Tarifa tarifa = (Tarifa) cboTipo.getSelectedItem();
         final String placa = txtPlaca.getText();
+        final String dni = txtDni.getText();
+        final String nombre = txtNombre.isEnabled() ? txtNombre.getText() : "";
         gui.ejecutar(this, () -> {
-            TicketCochera t = gui.getApp().getCheckin().registrarEntrada(placa, tarifa == null ? 0 : tarifa.getId());
+            Alquiler t = gui.getApp().getCheckin().registrarEntrada(dni, nombre, placa, tarifa == null ? 0 : tarifa.getId());
             ultimo = t;
             lblUltimo.setText(t.getCodigoBarras() + "   ·   " + t.getPlacaFormateada() + "   ·   "
-                    + t.getTarifa().getTipoVehiculo() + "   ·   " + FechaUtil.hora(t.getHoraEntrada()));
+                    + t.getTarifa().getTipoVehiculo() + "   ·   " + t.getCliente().getNombreCompleto()
+                    + "   ·   " + FechaUtil.hora(t.getHoraEntrada()));
             btnReimprimir.setEnabled(true);
             txtPlaca.setText("");
+            txtDni.setText("");
             gui.imprimir(this, new TicketEntrada(t));
         });
-        txtPlaca.requestFocusInWindow();
+        txtDni.requestFocusInWindow();
     }
 
     /**
@@ -90,6 +130,13 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
         lblAviso = new javax.swing.JLabel();
         pnlFormulario = new javax.swing.JPanel();
         lblTitulo = new javax.swing.JLabel();
+        lblSecCliente = new javax.swing.JLabel();
+        lblSecVehiculo = new javax.swing.JLabel();
+        lblDni = new javax.swing.JLabel();
+        txtDni = new javax.swing.JTextField();
+        lblCliente = new javax.swing.JLabel();
+        lblNombre = new javax.swing.JLabel();
+        txtNombre = new javax.swing.JTextField();
         lblPlaca = new javax.swing.JLabel();
         txtPlaca = new javax.swing.JTextField();
         lblPlacaNota = new javax.swing.JLabel();
@@ -130,69 +177,141 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         pnlFormulario.add(lblTitulo, gridBagConstraints);
 
-        lblPlaca.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
-        lblPlaca.setText("Placa");
+        lblSecCliente.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
+        lblSecCliente.setForeground(new java.awt.Color(113, 113, 122));
+        lblSecCliente.setText("CLIENTE");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(16, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(14, 0, 0, 0);
+        pnlFormulario.add(lblSecCliente, gridBagConstraints);
+
+        lblSecVehiculo.setFont(new java.awt.Font("Segoe UI", 1, 11)); // NOI18N
+        lblSecVehiculo.setForeground(new java.awt.Color(113, 113, 122));
+        lblSecVehiculo.setText("VEHÍCULO");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(14, 24, 0, 0);
+        pnlFormulario.add(lblSecVehiculo, gridBagConstraints);
+
+        lblDni.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        lblDni.setText("DNI del cliente");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(8, 0, 0, 0);
+        pnlFormulario.add(lblDni, gridBagConstraints);
+
+        txtDni.setColumns(9);
+        txtDni.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        txtDni.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtDniActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        pnlFormulario.add(txtDni, gridBagConstraints);
+
+        lblCliente.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblCliente.setForeground(new java.awt.Color(113, 113, 122));
+        lblCliente.setText("Escribe el DNI (8 dígitos) y presiona Enter.");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(4, 0, 0, 0);
+        pnlFormulario.add(lblCliente, gridBagConstraints);
+
+        lblNombre.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        lblNombre.setText("Nombre del cliente (solo si es nuevo)");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(14, 0, 0, 0);
+        pnlFormulario.add(lblNombre, gridBagConstraints);
+
+        txtNombre.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 0.5;
+        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        pnlFormulario.add(txtNombre, gridBagConstraints);
+
+        lblPlaca.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        lblPlaca.setText("Placa");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(8, 24, 0, 0);
         pnlFormulario.add(lblPlaca, gridBagConstraints);
 
         txtPlaca.setColumns(9);
-        txtPlaca.setFont(new java.awt.Font("Segoe UI", 0, 28)); // NOI18N
-        txtPlaca.setFont(new java.awt.Font("Segoe UI", 1, 28)); // NOI18N
+        txtPlaca.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
         txtPlaca.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtPlacaActionPerformed(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(6, 24, 0, 0);
         pnlFormulario.add(txtPlaca, gridBagConstraints);
 
         lblPlacaNota.setFont(new java.awt.Font("Segoe UI", 0, 11)); // NOI18N
         lblPlacaNota.setForeground(new java.awt.Color(113, 113, 122));
         lblPlacaNota.setText("Se escribe sola en el formato ABC-123. Enter para registrar.");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(4, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(4, 24, 0, 0);
         pnlFormulario.add(lblPlacaNota, gridBagConstraints);
 
         lblTipo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         lblTipo.setText("Tipo de vehículo");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 9;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(16, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(12, 24, 0, 0);
         pnlFormulario.add(lblTipo, gridBagConstraints);
 
         cboTipo.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 10;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        gridBagConstraints.weightx = 0.5;
+        gridBagConstraints.insets = new java.awt.Insets(6, 24, 0, 0);
         pnlFormulario.add(cboTipo, gridBagConstraints);
 
-        lblTarifaInfo.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
-        lblTarifaInfo.setForeground(new java.awt.Color(113, 113, 122));
+        lblTarifaInfo.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
+        lblTarifaInfo.setForeground(new java.awt.Color(180, 83, 9));
         lblTarifaInfo.setText(" ");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(14, 0, 0, 0);
         pnlFormulario.add(lblTarifaInfo, gridBagConstraints);
 
         btnRegistrar.setText("Registrar entrada e imprimir ticket");
@@ -204,9 +323,10 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(20, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(16, 0, 0, 0);
         pnlFormulario.add(btnRegistrar, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -269,6 +389,15 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
         add(lblRelleno, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
+    private void txtDniActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtDniActionPerformed
+        mostrarCliente();
+        if (txtNombre.isEnabled()) {
+            txtNombre.requestFocusInWindow();
+        } else {
+            txtPlaca.requestFocusInWindow();
+        }
+    }//GEN-LAST:event_txtDniActionPerformed
+
     private void txtPlacaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtPlacaActionPerformed
         registrar();
     }//GEN-LAST:event_txtPlacaActionPerformed
@@ -288,9 +417,14 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
     private javax.swing.JButton btnReimprimir;
     private javax.swing.JComboBox<cochera.modelo.Tarifa> cboTipo;
     private javax.swing.JLabel lblAviso;
+    private javax.swing.JLabel lblCliente;
+    private javax.swing.JLabel lblDni;
+    private javax.swing.JLabel lblNombre;
     private javax.swing.JLabel lblPlaca;
     private javax.swing.JLabel lblPlacaNota;
     private javax.swing.JLabel lblRelleno;
+    private javax.swing.JLabel lblSecCliente;
+    private javax.swing.JLabel lblSecVehiculo;
     private javax.swing.JLabel lblTarifaInfo;
     private javax.swing.JLabel lblTipo;
     private javax.swing.JLabel lblTitulo;
@@ -298,6 +432,8 @@ public class PnlCheckin extends javax.swing.JPanel implements Refrescable {
     private javax.swing.JLabel lblUltimoTitulo;
     private javax.swing.JPanel pnlFormulario;
     private javax.swing.JPanel pnlUltimo;
+    private javax.swing.JTextField txtDni;
+    private javax.swing.JTextField txtNombre;
     private javax.swing.JTextField txtPlaca;
     // End of variables declaration//GEN-END:variables
 }

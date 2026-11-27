@@ -6,15 +6,18 @@ import cochera.dto.ResultadoTarifa;
 import cochera.excepcion.CocheraException;
 import cochera.excepcion.ValidacionException;
 import cochera.impresion.TicketSalida;
+import cochera.modelo.Alquiler;
 import cochera.modelo.MetodoPago;
 import cochera.modelo.Pago;
-import cochera.modelo.TicketCochera;
+import cochera.servicio.CheckoutServicio;
 import cochera.util.Dinero;
 import cochera.util.FechaUtil;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Pestaña "Check-out" (JPanel Form): busca el ticket, muestra la tarifa por bloques de 12 h,
+ * Pestaña "Check-out" (JPanel Form): busca el alquiler (código, placa o DNI del cliente),
+ * muestra el monto calculado por minuto,
  * calcula el vuelto y registra el pago en el turno de quien cobra.
  */
 public class PnlCheckout extends javax.swing.JPanel implements Refrescable {
@@ -60,6 +63,12 @@ public class PnlCheckout extends javax.swing.JPanel implements Refrescable {
         lblMensaje.setText(" ");
         String entrada = txtBuscar.getText().trim();
         try {
+            if (CheckoutServicio.esDni(entrada)) {
+                entrada = elegirAlquilerDeCliente(entrada);
+                if (entrada == null) {
+                    return;
+                }
+            }
             cotizacion = gui.getApp().getCheckout().buscar(entrada);
             mostrarCotizacion();
         } catch (ValidacionException e) {
@@ -81,21 +90,37 @@ public class PnlCheckout extends javax.swing.JPanel implements Refrescable {
         }
     }
 
+    /**
+     * RF-COB-01: con el DNI del cliente se listan sus alquileres EN_CURSO y se elige uno.
+     * Devuelve el código del alquiler elegido, o null si se cancela.
+     */
+    private String elegirAlquilerDeCliente(String dni) throws CocheraException {
+        List<Alquiler> lista = gui.getApp().getCheckout().alquileresEnCursoDeCliente(dni);
+        if (lista.size() == 1) {
+            return lista.get(0).getCodigoBarras();
+        }
+        List<String> opciones = new ArrayList<>();
+        for (Alquiler a : lista) {
+            opciones.add(a.getCodigoBarras() + "   ·   " + a.getPlacaFormateada() + "   ·   "
+                    + a.getTarifa().getTipoVehiculo() + "   ·   desde " + FechaUtil.fechaHora(a.getHoraEntrada()));
+        }
+        String elegido = Dialogos.elegir(this, lista.get(0).getCliente().getNombreCompleto()
+                + " tiene " + lista.size() + " vehículos dentro. ¿Cuál sale?", opciones);
+        return elegido == null ? null : elegido.substring(0, elegido.indexOf(' '));
+    }
+
     private void mostrarCotizacion() {
-        TicketCochera t = cotizacion.getTicket();
+        Alquiler t = cotizacion.getTicket();
         ResultadoTarifa r = cotizacion.getTarifa();
         lblVTicket.setText(t.getCodigoBarras());
-        lblVPlaca.setText(t.getPlacaFormateada());
+        lblVPlaca.setText(t.getPlacaFormateada() + (t.getCliente() == null ? ""
+                : "   ·   " + t.getCliente().getNombreCompleto() + " (DNI " + t.getCliente().getDni() + ")"));
         lblVVehiculo.setText(t.getTarifa().getTipoVehiculo());
         lblVIngreso.setText(FechaUtil.fechaHora(t.getHoraEntrada()));
         lblVTiempo.setText(FechaUtil.formatoMinutos(r.getMinutos()));
-        lblVBase.setText(Dinero.soles(t.getTarifa().getCostoBase()) + " x " + r.getBloques() + " bloque(s) de 12 h");
-        if (r.getHorasExtra() > 0) {
-            lblVExtra.setText(r.getHorasExtra() + " x " + Dinero.soles(t.getTarifa().getSobrecargoHora()) + " = "
-                    + Dinero.soles(r.getMontoSobrecargo()));
-        } else {
-            lblVExtra.setText(r.getMinutos() >= 12 * 60 ? "Ninguna (gracia de 30 min)" : "Ninguna");
-        }
+        lblVBase.setText(Dinero.soles(r.getPrecioHora()) + " (" + t.getTarifa().getTipoVehiculo() + ")");
+        lblVExtra.setText(r.getMinutos() + " min x " + Dinero.soles(r.getPrecioHora()) + " / 60 = "
+                + Dinero.soles(r.getSubtotal()));
         lblTotal.setText(Dinero.soles(r.getTarifaTotal()));
         btnCobrar.setText("Cobrar " + Dinero.soles(r.getTarifaTotal()));
         rbEfectivo.setSelected(true);
@@ -255,7 +280,7 @@ public class PnlCheckout extends javax.swing.JPanel implements Refrescable {
 
         lblInstruccion.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
         lblInstruccion.setForeground(new java.awt.Color(113, 113, 122));
-        lblInstruccion.setText("Escanea el código de barras del ticket (TK-...) o escribe la placa y presiona Enter.");
+        lblInstruccion.setText("Escanea el código del ticket (TK-...), escribe la placa o el DNI del cliente y presiona Enter.");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
@@ -409,7 +434,7 @@ public class PnlCheckout extends javax.swing.JPanel implements Refrescable {
 
         lblDBase.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblDBase.setForeground(new java.awt.Color(113, 113, 122));
-        lblDBase.setText("Tarifa base");
+        lblDBase.setText("Precio por hora");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 5;
@@ -428,7 +453,7 @@ public class PnlCheckout extends javax.swing.JPanel implements Refrescable {
 
         lblDExtra.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblDExtra.setForeground(new java.awt.Color(113, 113, 122));
-        lblDExtra.setText("Horas extra");
+        lblDExtra.setText("Cálculo");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 6;

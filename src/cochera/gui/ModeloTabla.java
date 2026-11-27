@@ -7,7 +7,7 @@ import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
 /**
- * Modelo de tabla GENÉRICO: sirve para mostrar cualquier lista de objetos (Pago, TicketCochera, Tarifa...).
+ * Modelo de tabla GENÉRICO: sirve para mostrar cualquier lista de objetos (Pago, Alquiler, Tarifa...).
  * Cada columna se define con una lambda que saca el valor a mostrar del objeto.
  *
  * <pre>

@@ -6,10 +6,10 @@ import cochera.excepcion.CocheraException;
 import cochera.impresion.Impresora;
 import cochera.impresion.TicketImprimible;
 import cochera.impresion.TicketSalida;
+import cochera.modelo.Alquiler;
 import cochera.modelo.MetodoPago;
 import cochera.modelo.Pago;
 import cochera.modelo.Tarifa;
-import cochera.modelo.TicketCochera;
 import cochera.modelo.Usuario;
 import cochera.servicio.MonitoreoServicio;
 import cochera.util.Dinero;
@@ -160,7 +160,7 @@ public abstract class MenuBase {
 
     private static String celdaTarifa(Tarifa t) {
         return Texto.izquierda(String.valueOf(t.getId()), 2) + ". " + Texto.columna(t.getTipoVehiculo(), 24)
-                + " S/" + Texto.izquierda(Dinero.decimal(t.getCostoBase()), 5);
+                + " S/" + Texto.izquierda(Dinero.decimal(t.getPrecioHora()), 5) + "/h";
     }
 
     // ─────────────────────── Autos dentro (compartido) ───────────────────────
@@ -170,8 +170,8 @@ public abstract class MenuBase {
         String filtroPlaca = "";
         Tarifa filtroTipo = null;
         while (true) {
-            List<TicketCochera> todos = mon.listarAutosDentro();
-            List<TicketCochera> lista = mon.filtrar(todos, filtroPlaca, filtroTipo);
+            List<Alquiler> todos = mon.listarAutosDentro();
+            List<Alquiler> lista = mon.filtrar(todos, filtroPlaca, filtroTipo);
             boolean hayFiltro = !filtroPlaca.isEmpty() || filtroTipo != null;
             consola.subtitulo("AUTOS DENTRO: " + todos.size() + " vehiculo(s) - EN VIVO"
                     + (hayFiltro ? "  | filtro: " + (filtroPlaca.isEmpty() ? "" : "placa '" + filtroPlaca + "' ")
@@ -182,7 +182,7 @@ public abstract class MenuBase {
                 consola.info(" #   " + Texto.derecha("Codigo", 16) + Texto.derecha("Placa", 9) + Texto.derecha("Tipo", 22)
                         + Texto.derecha("Ingreso", 18) + Texto.derecha("Tiempo", 10) + Texto.derecha("Estimado", 11) + "Alerta");
                 for (int i = 0; i < lista.size(); i++) {
-                    TicketCochera t = lista.get(i);
+                    Alquiler t = lista.get(i);
                     consola.info(Texto.izquierda(String.valueOf(i + 1), 2) + "   "
                             + Texto.derecha(t.getCodigoBarras(), 16)
                             + Texto.derecha(t.getPlacaFormateada(), 9)
@@ -209,7 +209,7 @@ public abstract class MenuBase {
                 if (indice < 0) {
                     consola.error("Opcion no valida.");
                 } else {
-                    final TicketCochera elegido = lista.get(indice);
+                    final Alquiler elegido = lista.get(indice);
                     ejecutar(() -> alSeleccionarVehiculo(elegido));
                 }
             }
@@ -220,25 +220,23 @@ public abstract class MenuBase {
      * GANCHO (hook): qué pasa al elegir un vehículo en "Autos dentro".
      * Por defecto muestra el detalle; MenuEmpleado lo sobrescribe para cobrar directo.
      */
-    protected void alSeleccionarVehiculo(TicketCochera ticket) throws CocheraException {
+    protected void alSeleccionarVehiculo(Alquiler ticket) throws CocheraException {
         mostrarCotizacion(ticket, ctx.getCalculadora().calcular(ticket, ctx.getReloj().ahora()));
     }
 
-    protected void mostrarCotizacion(TicketCochera t, ResultadoTarifa r) {
+    protected void mostrarCotizacion(Alquiler t, ResultadoTarifa r) {
         consola.subtitulo("DETALLE DE ESTADIA");
         consola.info("  Ticket:          " + t.getCodigoBarras());
         consola.info("  Placa:           " + t.getPlacaFormateada());
         consola.info("  Vehiculo:        " + t.getTarifa().getTipoVehiculo());
+        consola.info("  Cliente:         " + (t.getCliente() == null ? "-" : t.getCliente().toString()));
         consola.info("  Ingreso:         " + FechaUtil.fechaHora(t.getHoraEntrada()));
-        consola.info("  Tiempo:          " + FechaUtil.formatoMinutos(r.getMinutos()));
-        consola.info("  Tarifa base:     " + Dinero.soles(t.getTarifa().getCostoBase()) + " x " + r.getBloques()
-                + " bloque(s) de 12 h = " + Dinero.soles(t.getTarifa().getCostoBase() * r.getBloques()));
-        if (r.getHorasExtra() > 0) {
-            boolean conTope = r.getMontoSobrecargo() < r.getHorasExtra() * t.getTarifa().getSobrecargoHora();
-            consola.info("  Horas extra:     " + r.getHorasExtra() + " x " + Dinero.soles(t.getTarifa().getSobrecargoHora())
-                    + " = " + Dinero.soles(r.getMontoSobrecargo()) + (conTope ? "  (tope: no supera la tarifa base)" : ""));
-        } else if (r.getMinutos() >= 12 * 60) {
-            consola.info("  Horas extra:     ninguna (dentro de la gracia de 30 min)");
+        consola.info("  Tiempo:          " + FechaUtil.formatoMinutos(r.getMinutos()) + " (" + r.getMinutos() + " min)");
+        consola.info("  Tarifa:          " + Dinero.soles(r.getPrecioHora()) + " por hora -> "
+                + r.getMinutos() + " min x " + Dinero.decimal(r.getPrecioHora()) + " / 60");
+        if (r.getDescuento() > 0) {
+            consola.info("  Subtotal:        " + Dinero.soles(r.getSubtotal()));
+            consola.info("  Descuento:       -" + Dinero.soles(r.getDescuento()));
         }
         consola.info("  TOTAL A COBRAR:  " + Dinero.soles(r.getTarifaTotal()));
     }
@@ -255,7 +253,7 @@ public abstract class MenuBase {
                 + Texto.derecha("Cobrado por", 18) + "Ticket");
         for (int i = 0; i < pagos.size(); i++) {
             Pago p = pagos.get(i);
-            TicketCochera t = p.getTicket();
+            Alquiler t = p.getTicket();
             consola.info(Texto.izquierda(String.valueOf(numeroInicial + i), 2) + "   "
                     + Texto.derecha(FechaUtil.fechaHora(p.getCreadoEn()), 18)
                     + Texto.derecha(t.getCodigoBarras(), 16)
@@ -269,7 +267,7 @@ public abstract class MenuBase {
     }
 
     protected void mostrarDetallePago(Pago p) {
-        TicketCochera t = p.getTicket();
+        Alquiler t = p.getTicket();
         consola.subtitulo("PAGO " + Texto.idCorto(p.getId()));
         consola.info("  Ticket:       " + t.getCodigoBarras() + " (" + t.getEstado() + ")");
         consola.info("  Placa:        " + t.getPlacaFormateada() + " - " + t.getTarifa().getTipoVehiculo());

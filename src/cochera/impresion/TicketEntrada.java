@@ -1,6 +1,6 @@
 package cochera.impresion;
 
-import cochera.modelo.TicketCochera;
+import cochera.modelo.Alquiler;
 import cochera.util.Dinero;
 import cochera.util.FechaUtil;
 
@@ -10,9 +10,9 @@ import cochera.util.FechaUtil;
  */
 public class TicketEntrada extends TicketImprimible {
 
-    private final TicketCochera ticket;
+    private final Alquiler ticket;
 
-    public TicketEntrada(TicketCochera ticket) {
+    public TicketEntrada(Alquiler ticket) {
         this.ticket = ticket;
     }
 
@@ -37,9 +37,11 @@ public class TicketEntrada extends TicketImprimible {
                 + FormatoTermico.fila("FECHA", FechaUtil.fecha(ticket.getHoraEntrada()))
                 + FormatoTermico.fila("INGRESO", FechaUtil.hora(ticket.getHoraEntrada()))
                 + "\n"
+                + FormatoTermico.fila("DNI CLIENTE", ticket.getCliente() == null ? "-" : ticket.getCliente().getDni())
+                + "\n"
                 + FormatoTermico.centro(ticket.getTarifa().getTipoVehiculo() + " S/."
-                        + Dinero.decimal(ticket.getTarifa().getCostoBase()))
-                + FormatoTermico.centro("TURNO O FRACCION")
+                        + Dinero.decimal(ticket.getTarifa().getPrecioHora()))
+                + FormatoTermico.centro("POR HORA (SE COBRA POR MINUTO)")
                 + "\n"
                 + FormatoTermico.codigoBarras(ticket.getCodigoBarras());
     }
@@ -48,7 +50,7 @@ public class TicketEntrada extends TicketImprimible {
     protected String pie() {
         return "Condiciones:\n"
                 + "- No perder el ticket\n"
-                + "* Pasando las 12 horas se cobra\n"
-                + "un turno mas o fraccion.\n";
+                + "* Se cobra por minuto segun la\n"
+                + "tarifa por hora del vehiculo.\n";
     }
 }

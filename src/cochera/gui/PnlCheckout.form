@@ -99,7 +99,7 @@
             <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="7a" green="71" red="71" type="rgb"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="Escanea el código de barras del ticket (TK-...) o escribe la placa y presiona Enter."/>
+            <Property name="text" type="java.lang.String" value="Escanea el código del ticket (TK-...), escribe la placa o el DNI del cliente y presiona Enter."/>
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
@@ -335,7 +335,7 @@
             <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="7a" green="71" red="71" type="rgb"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="Tarifa base"/>
+            <Property name="text" type="java.lang.String" value="Precio por hora"/>
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
@@ -364,7 +364,7 @@
             <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
               <Color blue="7a" green="71" red="71" type="rgb"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="Horas extra"/>
+            <Property name="text" type="java.lang.String" value="Cálculo"/>
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">

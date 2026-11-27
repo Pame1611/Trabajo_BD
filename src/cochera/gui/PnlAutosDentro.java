@@ -1,8 +1,8 @@
 package cochera.gui;
 
 import cochera.excepcion.CocheraException;
+import cochera.modelo.Alquiler;
 import cochera.modelo.Tarifa;
-import cochera.modelo.TicketCochera;
 import cochera.servicio.MonitoreoServicio;
 import cochera.util.Dinero;
 import cochera.util.FechaUtil;
@@ -21,21 +21,21 @@ public class PnlAutosDentro extends javax.swing.JPanel implements Refrescable {
     private static final String TODOS = "Todos los tipos";
 
     private final transient ContextoGui gui;
-    private final transient Consumer<TicketCochera> alCobrar;
-    private final ModeloTabla<TicketCochera> modelo;
-    private transient List<TicketCochera> todos = new ArrayList<>();
+    private final transient Consumer<Alquiler> alCobrar;
+    private final ModeloTabla<Alquiler> modelo;
+    private transient List<Alquiler> todos = new ArrayList<>();
 
     /**
      * @param alCobrar qué hacer al cobrar un vehículo; null si el usuario no cobra (administrador).
      */
-    public PnlAutosDentro(ContextoGui gui, Consumer<TicketCochera> alCobrar) {
+    public PnlAutosDentro(ContextoGui gui, Consumer<Alquiler> alCobrar) {
         this.gui = gui;
         this.alCobrar = alCobrar;
         initComponents();
         final MonitoreoServicio mon = gui.getApp().getMonitoreo();
-        modelo = new ModeloTabla<TicketCochera>()
-                .columna("Código", TicketCochera::getCodigoBarras)
-                .columna("Placa", TicketCochera::getPlacaFormateada)
+        modelo = new ModeloTabla<Alquiler>()
+                .columna("Código", Alquiler::getCodigoBarras)
+                .columna("Placa", Alquiler::getPlacaFormateada)
                 .columna("Tipo de vehículo", t -> t.getTarifa().getTipoVehiculo())
                 .columna("Ingreso", t -> FechaUtil.fechaHora(t.getHoraEntrada()))
                 .columna("Tiempo dentro", mon::tiempoTranscurrido)
@@ -94,14 +94,14 @@ public class PnlAutosDentro extends javax.swing.JPanel implements Refrescable {
                 tipo = t;
             }
         }
-        List<TicketCochera> lista = gui.getApp().getMonitoreo().filtrar(todos, txtFiltroPlaca.getText(), tipo);
+        List<Alquiler> lista = gui.getApp().getMonitoreo().filtrar(todos, txtFiltroPlaca.getText(), tipo);
         modelo.setFilasConservandoSeleccion(tblAutos, lista);
         lblConteo.setText("   " + todos.size() + " vehículo(s) dentro"
                 + (lista.size() != todos.size() ? "  ·  mostrando " + lista.size() : ""));
     }
 
-    private TicketCochera seleccionado() {
-        TicketCochera t = modelo.getSeleccionado(tblAutos);
+    private Alquiler seleccionado() {
+        Alquiler t = modelo.getSeleccionado(tblAutos);
         if (t == null) {
             Dialogos.info(this, "Selecciona un vehículo de la tabla.");
         }
@@ -109,7 +109,7 @@ public class PnlAutosDentro extends javax.swing.JPanel implements Refrescable {
     }
 
     private void verDetalle() {
-        TicketCochera t = seleccionado();
+        Alquiler t = seleccionado();
         if (t != null) {
             Dialogos.info(this, Dialogos.textoCotizacion(t,
                     gui.getApp().getCalculadora().calcular(t, gui.getApp().getReloj().ahora())));
@@ -117,7 +117,7 @@ public class PnlAutosDentro extends javax.swing.JPanel implements Refrescable {
     }
 
     private void cobrarSeleccionado() {
-        TicketCochera t = seleccionado();
+        Alquiler t = seleccionado();
         if (t != null && alCobrar != null) {
             alCobrar.accept(t);
         }

@@ -5,7 +5,7 @@ import cochera.modelo.Tarifa;
 import cochera.util.Dinero;
 
 /**
- * Pestaña "Tarifario" (JPanel Form): el administrador cambia la tarifa base y el sobrecargo por hora.
+ * Pestaña "Tarifario" (JPanel Form): el administrador cambia la tarifa por hora de cada tipo de vehículo.
  */
 public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
 
@@ -20,11 +20,11 @@ public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
         modelo = new ModeloTabla<Tarifa>()
                 .columna("ID", Tarifa::getId)
                 .columna("Tipo de vehículo", Tarifa::getTipoVehiculo)
-                .columna("Tarifa base (12 h)", t -> Dinero.soles(t.getCostoBase()))
-                .columna("Hora extra", t -> Dinero.soles(t.getSobrecargoHora()));
+                .columna("Tarifa por hora", t -> Dinero.soles(t.getPrecioHora()))
+                .columna("Por minuto", t -> "S/ " + String.format(java.util.Locale.US, "%.4f", t.getPrecioMinuto()));
         tblTarifas.setModel(modelo);
         Estilo.tabla(tblTarifas);
-        Estilo.anchos(tblTarifas, 40, 260, 140, 120);
+        Estilo.anchos(tblTarifas, 40, 260, 130, 110);
         Estilo.derecha(tblTarifas, 2, 3);
         Estilo.botonPrimario(btnGuardar);
         tblTarifas.getSelectionModel().addListSelectionListener(e -> {
@@ -44,10 +44,8 @@ public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
         Tarifa t = modelo.getSeleccionado(tblTarifas);
         boolean hay = t != null;
         lblSeleccion.setText(hay ? t.getTipoVehiculo() : "Selecciona un tipo de vehículo en la tabla.");
-        txtBase.setText(hay ? Dinero.decimal(t.getCostoBase()) : "");
-        txtExtra.setText(hay ? Dinero.decimal(t.getSobrecargoHora()) : "");
+        txtBase.setText(hay ? Dinero.decimal(t.getPrecioHora()) : "");
         txtBase.setEnabled(hay);
-        txtExtra.setEnabled(hay);
         btnGuardar.setEnabled(hay);
     }
 
@@ -67,8 +65,6 @@ public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
         lblSeleccion = new javax.swing.JLabel();
         lblBase = new javax.swing.JLabel();
         txtBase = new javax.swing.JTextField();
-        lblExtra = new javax.swing.JLabel();
-        txtExtra = new javax.swing.JTextField();
         btnGuardar = new javax.swing.JButton();
         lblNota = new javax.swing.JLabel();
         lblRelleno = new javax.swing.JLabel();
@@ -105,12 +101,12 @@ public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
         pnlEdicion.add(lblSeleccion, gridBagConstraints);
 
         lblBase.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
-        lblBase.setText("Tarifa base por bloque de 12 h (S/)");
+        lblBase.setText("Tarifa por hora (S/)");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(16, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(14, 0, 0, 0);
         pnlEdicion.add(lblBase, gridBagConstraints);
 
         txtBase.setColumns(8);
@@ -123,25 +119,6 @@ public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
         gridBagConstraints.insets = new java.awt.Insets(4, 0, 0, 0);
         pnlEdicion.add(txtBase, gridBagConstraints);
 
-        lblExtra.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
-        lblExtra.setText("Sobrecargo por hora extra (S/)");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(12, 0, 0, 0);
-        pnlEdicion.add(lblExtra, gridBagConstraints);
-
-        txtExtra.setColumns(8);
-        txtExtra.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(4, 0, 0, 0);
-        pnlEdicion.add(txtExtra, gridBagConstraints);
-
         btnGuardar.setText("Guardar cambios");
         btnGuardar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -150,26 +127,26 @@ public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(16, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(12, 0, 0, 0);
         pnlEdicion.add(btnGuardar, gridBagConstraints);
 
         lblNota.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
         lblNota.setForeground(new java.awt.Color(113, 113, 122));
-        lblNota.setText("<html>Regla de cobro: tarifa base por cada bloque de 12 h. Pasados 30 minutos del bloque se cobra cada hora o fracción, sin superar la tarifa base.</html>");
+        lblNota.setText("<html><body style=\"width:215px\">Regla de cobro: minutos de permanencia x tarifa por hora / 60. Ej.: Camioneta a S/ 5.00 por hora, 90 min = S/ 7.50.</body></html>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridy = 5;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(20, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(18, 0, 0, 0);
         pnlEdicion.add(lblNota, gridBagConstraints);
 
         lblRelleno.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         lblRelleno.setText(" ");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 8;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.weighty = 1.0;
         pnlEdicion.add(lblRelleno, gridBagConstraints);
 
@@ -182,12 +159,11 @@ public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
             return;
         }
         if (gui.ejecutar(this, () -> {
-            Double base = UtilForm.monto(txtBase.getText(), "tarifa base");
-            Double extra = UtilForm.monto(txtExtra.getText(), "hora extra");
-            if (base == null || extra == null) {
-                throw new ValidacionException("Completa la tarifa base y el sobrecargo por hora.");
+            Double precio = UtilForm.monto(txtBase.getText(), "tarifa por hora");
+            if (precio == null) {
+                throw new ValidacionException("Escribe la tarifa por hora.");
             }
-            gui.getApp().getAdmin().actualizarTarifa(t.getId(), base, extra);
+            gui.getApp().getAdmin().actualizarTarifa(t.getId(), precio);
         })) {
             refrescar();
             Dialogos.info(this, "Tarifa actualizada: " + t);
@@ -197,7 +173,6 @@ public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnGuardar;
     private javax.swing.JLabel lblBase;
-    private javax.swing.JLabel lblExtra;
     private javax.swing.JLabel lblNota;
     private javax.swing.JLabel lblRelleno;
     private javax.swing.JLabel lblSeleccion;
@@ -206,6 +181,5 @@ public class PnlTarifario extends javax.swing.JPanel implements Refrescable {
     private javax.swing.JScrollPane scrTarifas;
     private javax.swing.JTable tblTarifas;
     private javax.swing.JTextField txtBase;
-    private javax.swing.JTextField txtExtra;
     // End of variables declaration//GEN-END:variables
 }
