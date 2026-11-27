@@ -45,6 +45,7 @@ public class TicketSalida extends TicketImprimible {
                 + FormatoTermico.fila("Placa:", t.getPlacaFormateada())
                 + FormatoTermico.fila("DNI Cliente:", t.getCliente() == null ? "-" : t.getCliente().getDni())
                 + FormatoTermico.fila("Vehiculo:", t.getTarifa().getTipoVehiculo())
+                + FormatoTermico.fila("Modelo:", t.getDescripcionVehiculo())
                 + FormatoTermico.fila("Hora Entrada:", FechaUtil.hora(t.getHoraEntrada()))
                 + FormatoTermico.fila("Hora Salida:", FechaUtil.hora(horaSalida()))
                 + FormatoTermico.fila("Tiempo Total:", FechaUtil.formatoMinutos(minutos))

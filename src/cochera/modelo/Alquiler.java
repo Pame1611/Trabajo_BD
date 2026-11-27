@@ -10,7 +10,8 @@ import java.util.UUID;
  * Alquiler de un espacio de la cochera (tabla alquiler). Antes se llamaba TicketCochera.
  *
  * Nace EN_CURSO en la entrada y pasa a PAGADO en la salida (o ANULADO por el admin).
- * Guarda el DNI del cliente y el del empleado que registró la entrada; la fecha y hora
+ * Guarda el DNI del cliente, el del empleado que registró la entrada y el modelo del
+ * vehículo (de él salen la marca y el tipo); la fecha y hora
  * de salida quedan en null hasta que el vehículo sale.
  *
  * El monto lo calcula {@link #calcularMonto(LocalDateTime)}:
@@ -25,11 +26,12 @@ public class Alquiler {
     private final String codigoBarras;
     private final Cliente cliente;
     private final Usuario empleado;
+    private final Modelo modelo;
     private LocalDateTime horaSalida;
     private EstadoTicket estado;
 
     public Alquiler(String placa, Tarifa tarifa, LocalDateTime horaEntrada, String codigoBarras,
-                    Cliente cliente, Usuario empleado) {
+                    Cliente cliente, Usuario empleado, Modelo modelo) {
         this.id = UUID.randomUUID().toString();
         this.placa = placa;
         this.tarifa = tarifa;
@@ -37,6 +39,7 @@ public class Alquiler {
         this.codigoBarras = codigoBarras;
         this.cliente = cliente;
         this.empleado = empleado;
+        this.modelo = modelo;
         this.estado = EstadoTicket.EN_CURSO;
     }
 
@@ -112,5 +115,15 @@ public class Alquiler {
     /** Empleado que registró la entrada (llave foránea empleado_dni). */
     public Usuario getEmpleado() {
         return empleado;
+    }
+
+    /** Modelo del vehículo (llave foránea modelo_id); el alquiler guarda un solo ModeloID y la placa. */
+    public Modelo getModelo() {
+        return modelo;
+    }
+
+    /** "Toyota Yaris" o "Desconocido". */
+    public String getDescripcionVehiculo() {
+        return modelo == null ? Marca.DESCONOCIDO : modelo.getDescripcion();
     }
 }

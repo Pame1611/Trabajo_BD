@@ -15,6 +15,7 @@ import cochera.servicio.CobrosServicio;
 import cochera.servicio.ExportadorCSV;
 import cochera.servicio.MonitoreoServicio;
 import cochera.servicio.TurnoServicio;
+import cochera.servicio.VehiculoServicio;
 import cochera.servicio.VentaServicio;
 import cochera.util.Reloj;
 import java.io.File;
@@ -32,6 +33,7 @@ public class ContextoAplicacion {
     private final TurnoServicio turnos;
     private final ClienteServicio clientes;
     private final VentaServicio ventas;
+    private final VehiculoServicio vehiculos;
     private final CheckinServicio checkin;
     private final CheckoutServicio checkout;
     private final CobrosServicio cobros;
@@ -59,7 +61,8 @@ public class ContextoAplicacion {
         turnos = new TurnoServicio(baseDatos, reloj, auth);
         clientes = new ClienteServicio(baseDatos, reloj, auth);
         ventas = new VentaServicio(baseDatos, auth);
-        checkin = new CheckinServicio(baseDatos, reloj, turnos, clientes);
+        vehiculos = new VehiculoServicio(baseDatos, auth);
+        checkin = new CheckinServicio(baseDatos, reloj, turnos, clientes, vehiculos);
         checkout = new CheckoutServicio(baseDatos, reloj, auth, turnos, calculadora, ventas);
         cobros = new CobrosServicio(baseDatos, auth, turnos);
         monitoreo = new MonitoreoServicio(baseDatos, reloj, auth, turnos, calculadora);
@@ -121,6 +124,10 @@ public class ContextoAplicacion {
 
     public VentaServicio getVentas() {
         return ventas;
+    }
+
+    public VehiculoServicio getVehiculos() {
+        return vehiculos;
     }
 
     public CheckinServicio getCheckin() {

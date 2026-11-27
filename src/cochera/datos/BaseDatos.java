@@ -3,6 +3,8 @@ package cochera.datos;
 import cochera.excepcion.ValidacionException;
 import cochera.modelo.Alquiler;
 import cochera.modelo.Cliente;
+import cochera.modelo.Marca;
+import cochera.modelo.Modelo;
 import cochera.modelo.Pago;
 import cochera.modelo.Tarifa;
 import cochera.modelo.TurnoCaja;
@@ -30,6 +32,8 @@ public class BaseDatos {
 
     private final List<Usuario> usuarios = new CopyOnWriteArrayList<>();
     private final List<Tarifa> tarifas = new CopyOnWriteArrayList<>();
+    private final List<Marca> marcas = new CopyOnWriteArrayList<>();
+    private final List<Modelo> modelos = new CopyOnWriteArrayList<>();
     private final List<TurnoCaja> turnos = new CopyOnWriteArrayList<>();
     private final List<Cliente> clientes = new CopyOnWriteArrayList<>();
     private final List<Alquiler> tickets = new CopyOnWriteArrayList<>();
@@ -68,9 +72,26 @@ public class BaseDatos {
 
     // ───────────────────────────── TARIFARIO (tipo_vehiculo) ─────────────────────────────
 
-    public void insertarTarifa(Tarifa tarifa) {
-        tarifas.add(tarifa);
-        tarifas.sort(Comparator.comparingInt(Tarifa::getId));
+    /** UNIQUE(nombre): no se repite un tipo de vehículo. */
+    public void insertarTarifa(Tarifa tarifa) throws ValidacionException {
+        synchronized (candado) {
+            for (Tarifa t : tarifas) {
+                if (t.getTipoVehiculo().equalsIgnoreCase(tarifa.getTipoVehiculo())) {
+                    throw new ValidacionException("Ya existe el tipo de vehículo " + t.getTipoVehiculo() + ".");
+                }
+            }
+            tarifas.add(tarifa);
+            tarifas.sort(Comparator.comparingInt(Tarifa::getId));
+        }
+    }
+
+    /** Siguiente id para un tipo de vehículo nuevo (IDENTITY). */
+    public int siguienteIdTarifa() {
+        int maximo = 0;
+        for (Tarifa t : tarifas) {
+            maximo = Math.max(maximo, t.getId());
+        }
+        return maximo + 1;
     }
 
     public List<Tarifa> listarTarifas() {
@@ -84,6 +105,124 @@ public class BaseDatos {
             }
         }
         return null;
+    }
+
+    // ───────────────────────────── MARCA y MODELO ─────────────────────────────
+
+    /** UNIQUE(nombre) en la tabla marca. */
+    public void insertarMarca(Marca marca) throws ValidacionException {
+        synchronized (candado) {
+            if (buscarMarcaPorNombre(marca.getNombre()) != null) {
+                throw new ValidacionException("Ya existe la marca " + marca.getNombre() + ".");
+            }
+            marcas.add(marca);
+        }
+    }
+
+    public Marca buscarMarca(int id) {
+        for (Marca m : marcas) {
+            if (m.getId() == id) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    public Marca buscarMarcaPorNombre(String nombre) {
+        for (Marca m : marcas) {
+            if (m.getNombre().equalsIgnoreCase(nombre.trim())) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    /** Marcas en orden alfabético, con "Desconocido" primero. */
+    public List<Marca> listarMarcas() {
+        List<Marca> lista = new ArrayList<>(marcas);
+        lista.sort((a, b) -> a.esDesconocida() ? -1 : b.esDesconocida() ? 1
+                : a.getNombre().compareToIgnoreCase(b.getNombre()));
+        return lista;
+    }
+
+    public int siguienteIdMarca() {
+        int maximo = 0;
+        for (Marca m : marcas) {
+            maximo = Math.max(maximo, m.getId());
+        }
+        return maximo + 1;
+    }
+
+    /** UNIQUE(marca_id, nombre) y la marca debe existir (llave foránea). */
+    public void insertarModelo(Modelo modelo) throws ValidacionException {
+        synchronized (candado) {
+            if (buscarMarca(modelo.getMarca().getId()) == null) {
+                throw new ValidacionException("La marca " + modelo.getMarca() + " no existe.");
+            }
+            for (Modelo m : modelos) {
+                if (m.getMarca() == modelo.getMarca() && m.getNombre().equalsIgnoreCase(modelo.getNombre())) {
+                    throw new ValidacionException("La marca " + modelo.getMarca() + " ya tiene el modelo " + m.getNombre() + ".");
+                }
+            }
+            modelos.add(modelo);
+        }
+    }
+
+    public Modelo buscarModelo(int id) {
+        for (Modelo m : modelos) {
+            if (m.getId() == id) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    /** Modelos de una marca, con "Desconocido" primero y el resto en orden alfabético. */
+    public List<Modelo> modelosDeMarca(Marca marca) {
+        List<Modelo> lista = new ArrayList<>();
+        for (Modelo m : modelos) {
+            if (m.getMarca() == marca) {
+                lista.add(m);
+            }
+        }
+        lista.sort((a, b) -> a.esDesconocido() ? -1 : b.esDesconocido() ? 1
+                : a.getNombre().compareToIgnoreCase(b.getNombre()));
+        return lista;
+    }
+
+    public int siguienteIdModelo() {
+        int maximo = 0;
+        for (Modelo m : modelos) {
+            maximo = Math.max(maximo, m.getId());
+        }
+        return maximo + 1;
+    }
+
+    /** Llave foránea alquiler.modelo_id: no se elimina un modelo que ya se usó en un alquiler. */
+    public void eliminarModelo(Modelo modelo) throws ValidacionException {
+        synchronized (candado) {
+            for (Alquiler a : tickets) {
+                if (a.getModelo() == modelo) {
+                    throw new ValidacionException("No se puede eliminar " + modelo.getDescripcion()
+                            + ": ya se usó en el alquiler " + a.getCodigoBarras() + ".");
+                }
+            }
+            modelos.remove(modelo);
+        }
+    }
+
+    /** Elimina la marca y sus modelos (ON DELETE CASCADE), salvo que algún modelo ya se haya usado. */
+    public void eliminarMarca(Marca marca) throws ValidacionException {
+        synchronized (candado) {
+            for (Alquiler a : tickets) {
+                if (a.getModelo() != null && a.getModelo().getMarca() == marca) {
+                    throw new ValidacionException("No se puede eliminar la marca " + marca
+                            + ": ya se usó en el alquiler " + a.getCodigoBarras() + ".");
+                }
+            }
+            modelos.removeIf(m -> m.getMarca() == marca);
+            marcas.remove(marca);
+        }
     }
 
     // ───────────────────────────── TURNO_CAJA ─────────────────────────────
@@ -186,7 +325,7 @@ public class BaseDatos {
      * Así dos cajeros nunca obtienen el mismo número ni registran la misma placa dos veces.
      */
     public Alquiler registrarTicket(String placa, Tarifa tarifa, LocalDateTime horaEntrada,
-                                    Cliente cliente, Usuario empleado) throws ValidacionException {
+                                    Cliente cliente, Usuario empleado, Modelo modelo) throws ValidacionException {
         synchronized (candado) {
             Alquiler duplicado = buscarTicketEnCursoPorPlaca(placa);
             if (duplicado != null) {
@@ -196,8 +335,11 @@ public class BaseDatos {
             if (cliente == null || buscarCliente(cliente.getDni()) == null) {
                 throw new ValidacionException("El alquiler necesita un cliente registrado.");
             }
+            if (modelo == null || buscarModelo(modelo.getId()) == null) {
+                throw new ValidacionException("El modelo del vehículo no existe.");
+            }
             Alquiler ticket = new Alquiler(placa, tarifa, horaEntrada,
-                    generarCorrelativoTicket(horaEntrada.getYear()), cliente, empleado);
+                    generarCorrelativoTicket(horaEntrada.getYear()), cliente, empleado, modelo);
             tickets.add(ticket);
             return ticket;
         }

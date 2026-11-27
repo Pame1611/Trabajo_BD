@@ -5,6 +5,7 @@ import cochera.excepcion.CocheraException;
 import cochera.excepcion.ValidacionException;
 import cochera.modelo.Alquiler;
 import cochera.modelo.Cliente;
+import cochera.modelo.Modelo;
 import cochera.modelo.Tarifa;
 import cochera.modelo.TurnoCaja;
 import cochera.util.Placa;
@@ -20,12 +21,15 @@ public class CheckinServicio {
     private final Reloj reloj;
     private final TurnoServicio turnos;
     private final ClienteServicio clientes;
+    private final VehiculoServicio vehiculos;
 
-    public CheckinServicio(BaseDatos bd, Reloj reloj, TurnoServicio turnos, ClienteServicio clientes) {
+    public CheckinServicio(BaseDatos bd, Reloj reloj, TurnoServicio turnos, ClienteServicio clientes,
+                           VehiculoServicio vehiculos) {
         this.bd = bd;
         this.reloj = reloj;
         this.turnos = turnos;
         this.clientes = clientes;
+        this.vehiculos = vehiculos;
     }
 
     public List<Tarifa> obtenerTarifario() {
@@ -36,14 +40,17 @@ public class CheckinServicio {
      * Flujo:
      *  1. Verifica turno ABIERTO (el empleado del turno queda en el alquiler).
      *  2. Valida el DNI del cliente y lo registra si todavía no existe.
-     *  3. Normaliza la placa (mayúsculas, sin guion) y valida el tipo de vehículo.
+     *  3. Normaliza la placa y valida el modelo y el tipo de vehículo. Sin modelo se usa
+     *     "Desconocido"; si el modelo tiene tipo y no se eligió otro, se usa el del modelo.
      *  4. Rechaza duplicados (misma placa ya EN_CURSO).
      *  5. Genera el correlativo "TK-AAAA-NNNNNN" e inserta, en una sola operación atómica.
      *
      * @param nombreCliente solo se usa si el cliente es nuevo (puede ir vacío).
+     * @param idModelo 0 = Desconocido.
+     * @param idTarifa 0 = el tipo del modelo.
      */
-    public Alquiler registrarEntrada(String dniCliente, String nombreCliente, String placa, int idTarifa)
-            throws CocheraException {
+    public Alquiler registrarEntrada(String dniCliente, String nombreCliente, String placa, int idModelo,
+                                     int idTarifa) throws CocheraException {
         TurnoCaja turno = turnos.requerirTurnoAbierto(
                 "No tienes un turno abierto. Abre tu turno desde el Inicio antes de registrar entradas.");
 
@@ -53,6 +60,13 @@ public class CheckinServicio {
         }
         if (placaNorm.length() < 3) {
             throw new ValidacionException("La placa ingresada es demasiado corta.");
+        }
+        Modelo modelo = idModelo <= 0 ? vehiculos.modeloDesconocido() : bd.buscarModelo(idModelo);
+        if (modelo == null) {
+            throw new ValidacionException("Modelo de vehículo no válido.");
+        }
+        if (idTarifa <= 0 && modelo.getTipoVehiculo() != null) {
+            idTarifa = modelo.getTipoVehiculo().getId();
         }
         if (idTarifa <= 0) {
             throw new ValidacionException("Selecciona un tipo de vehículo.");
@@ -69,6 +83,6 @@ public class CheckinServicio {
         }
 
         Cliente cliente = clientes.obtenerORegistrar(dniCliente, nombreCliente);
-        return bd.registrarTicket(placaNorm, tarifa, reloj.ahora(), cliente, turno.getEmpleado());
+        return bd.registrarTicket(placaNorm, tarifa, reloj.ahora(), cliente, turno.getEmpleado(), modelo);
     }
 }

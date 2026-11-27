@@ -38,6 +38,7 @@ public class TicketEntrada extends TicketImprimible {
                 + FormatoTermico.fila("INGRESO", FechaUtil.hora(ticket.getHoraEntrada()))
                 + "\n"
                 + FormatoTermico.fila("DNI CLIENTE", ticket.getCliente() == null ? "-" : ticket.getCliente().getDni())
+                + FormatoTermico.fila("VEHICULO", ticket.getDescripcionVehiculo())
                 + "\n"
                 + FormatoTermico.centro(ticket.getTarifa().getTipoVehiculo() + " S/."
                         + Dinero.decimal(ticket.getTarifa().getPrecioHora()))
