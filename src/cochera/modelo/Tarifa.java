@@ -3,28 +3,27 @@ package cochera.modelo;
 import cochera.util.Dinero;
 
 /**
- * Fila del tarifario: tipo de vehículo, costo por bloque de 12 h y sobrecargo por hora extra.
+ * Fila del tarifario (tabla tipo_vehiculo): tipo de vehículo y su tarifa por hora.
+ * El cobro se hace por minuto: tarifa por hora / 60 (ver Alquiler.calcularMonto()).
  */
 public class Tarifa {
 
     private final int id;
     private final String tipoVehiculo;
-    private double costoBase;
-    private double sobrecargoHora;
+    private double precioHora;
 
-    public Tarifa(int id, String tipoVehiculo, double costoBase, double sobrecargoHora) {
+    public Tarifa(int id, String tipoVehiculo, double precioHora) {
         this.id = id;
         this.tipoVehiculo = tipoVehiculo;
-        actualizarPrecios(costoBase, sobrecargoHora);
+        actualizarPrecio(precioHora);
     }
 
-    /** Solo se permite cambiar precios, no crear ni borrar categorías. */
-    public final void actualizarPrecios(double nuevoCostoBase, double nuevoSobrecargo) {
-        if (nuevoCostoBase < 0 || nuevoSobrecargo < 0) {
-            throw new IllegalArgumentException("Los valores deben ser >= 0.");
+    /** Cambia la tarifa por hora. No se aceptan precios negativos. */
+    public final void actualizarPrecio(double nuevoPrecioHora) {
+        if (nuevoPrecioHora < 0) {
+            throw new IllegalArgumentException("Los precios no pueden ser negativos.");
         }
-        this.costoBase = Dinero.redondear(nuevoCostoBase);
-        this.sobrecargoHora = Dinero.redondear(nuevoSobrecargo);
+        this.precioHora = Dinero.redondear(nuevoPrecioHora);
     }
 
     public int getId() {
@@ -35,16 +34,18 @@ public class Tarifa {
         return tipoVehiculo;
     }
 
-    public double getCostoBase() {
-        return costoBase;
+    /** Tarifa por hora (S/). */
+    public double getPrecioHora() {
+        return precioHora;
     }
 
-    public double getSobrecargoHora() {
-        return sobrecargoHora;
+    /** Tarifa por minuto = tarifa por hora / 60 (sin redondear, para no perder céntimos). */
+    public double getPrecioMinuto() {
+        return precioHora / 60.0;
     }
 
     @Override
     public String toString() {
-        return tipoVehiculo + " (" + Dinero.soles(costoBase) + " / 12h, +" + Dinero.soles(sobrecargoHora) + " x h extra)";
+        return tipoVehiculo + " (" + Dinero.soles(precioHora) + " por hora)";
     }
 }

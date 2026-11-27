@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
  */
 public class Empleado extends Usuario {
 
-    public Empleado(String email, String password, String nombreCompleto, LocalDateTime creadoEn) {
-        super(email, password, nombreCompleto, creadoEn);
+    public Empleado(String dni, String password, String nombreCompleto, LocalDateTime creadoEn) {
+        super(dni, password, nombreCompleto, creadoEn);
     }
 
     @Override

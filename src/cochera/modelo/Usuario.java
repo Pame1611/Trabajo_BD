@@ -7,23 +7,24 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Usuario del sistema (tabla perfiles + auth.users de Supabase).
+ * Usuario del sistema (tabla empleado).
  *
  * Clase ABSTRACTA: no existe un "usuario genérico", siempre es un
- * Administrador o un Empleado (herencia). La contraseña nunca se guarda
+ * Administrador o un Empleado (herencia). Se identifica por su DNI de 8 dígitos,
+ * con el que inicia sesión (ValidarAcceso). La contraseña nunca se guarda
  * en texto plano, solo su hash SHA-256 (encapsulamiento).
  */
 public abstract class Usuario {
 
     private final String id;
-    private final String email;
+    private final String dni;
     private final String passwordHash;
     private final String nombreCompleto;
     private final LocalDateTime creadoEn;
 
-    protected Usuario(String email, String password, String nombreCompleto, LocalDateTime creadoEn) {
+    protected Usuario(String dni, String password, String nombreCompleto, LocalDateTime creadoEn) {
         this.id = UUID.randomUUID().toString();
-        this.email = email.trim().toLowerCase();
+        this.dni = dni.trim();
         this.passwordHash = hashear(password);
         this.nombreCompleto = nombreCompleto == null ? "" : nombreCompleto.trim();
         this.creadoEn = creadoEn;
@@ -47,12 +48,13 @@ public abstract class Usuario {
         return id;
     }
 
-    public String getEmail() {
-        return email;
+    /** DNI de 8 dígitos: es el usuario con el que se inicia sesión. */
+    public String getDni() {
+        return dni;
     }
 
     public String getNombreCompleto() {
-        return nombreCompleto.isEmpty() ? email : nombreCompleto;
+        return nombreCompleto.isEmpty() ? dni : nombreCompleto;
     }
 
     public LocalDateTime getCreadoEn() {

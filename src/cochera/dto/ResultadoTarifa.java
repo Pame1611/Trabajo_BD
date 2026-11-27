@@ -1,44 +1,46 @@
 package cochera.dto;
 
 /**
- * Resultado del cálculo de tarifa (interface ResultadoTarifa de lib/tarifa.ts).
+ * Detalle del monto de un alquiler al momento del cálculo: tiempo, precio, subtotal,
+ * descuento y total. El total siempre sale de Alquiler.calcularMonto().
  */
 public class ResultadoTarifa {
 
     private final long minutos;
-    private final long bloques;
+    private final double precioHora;
+    private final double subtotal;
+    private final double descuento;
     private final double tarifaTotal;
-    private final int horasExtra;
-    private final double montoSobrecargo;
 
-    public ResultadoTarifa(long minutos, long bloques, double tarifaTotal, int horasExtra, double montoSobrecargo) {
+    public ResultadoTarifa(long minutos, double precioHora, double subtotal, double descuento, double tarifaTotal) {
         this.minutos = minutos;
-        this.bloques = bloques;
+        this.precioHora = precioHora;
+        this.subtotal = subtotal;
+        this.descuento = descuento;
         this.tarifaTotal = tarifaTotal;
-        this.horasExtra = horasExtra;
-        this.montoSobrecargo = montoSobrecargo;
     }
 
-    /** Minutos totales de estadía (redondeado hacia abajo). */
+    /** Minutos completos de permanencia (redondeado hacia abajo). */
     public long getMinutos() {
         return minutos;
     }
 
-    /** Bloques de 12 h cobrados a tarifa base (mínimo 1). */
-    public long getBloques() {
-        return bloques;
+    /** Tarifa por hora del tipo de vehículo. */
+    public double getPrecioHora() {
+        return precioHora;
     }
 
+    /** Monto antes de descuentos. */
+    public double getSubtotal() {
+        return subtotal;
+    }
+
+    public double getDescuento() {
+        return descuento;
+    }
+
+    /** Monto a cobrar. */
     public double getTarifaTotal() {
         return tarifaTotal;
-    }
-
-    /** Horas extra cobradas después de la gracia de 30 min. */
-    public int getHorasExtra() {
-        return horasExtra;
-    }
-
-    public double getMontoSobrecargo() {
-        return montoSobrecargo;
     }
 }

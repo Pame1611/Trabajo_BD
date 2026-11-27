@@ -9,7 +9,7 @@ public class FilaExport {
 
     public static final String[] CABECERAS = {
         "Codigo Ticket", "Fecha", "Placa", "Tipo Vehiculo", "Hora Entrada", "Hora Salida",
-        "Tiempo Estadia", "Tiempo Total (min)", "Tarifa Base", "Sobrecargo", "Total Cobrado",
+        "Tiempo Estadia", "Tiempo Total (min)", "Precio Hora", "DNI Cliente", "Total Cobrado",
         "Metodo Pago", "Estado", "Empleado"
     };
 
@@ -21,16 +21,16 @@ public class FilaExport {
     private final String horaSalida;
     private final String tiempoEstadia;
     private final long tiempoTotalMin;
-    private final double tarifaBase;
-    private final double sobrecargo;
+    private final double precioHora;
+    private final String dniCliente;
     private final double totalCobrado;
     private final String metodoPago;
     private final String estado;
     private final String empleado;
 
     public FilaExport(String codigoTicket, String fecha, String placa, String tipoVehiculo, String horaEntrada,
-                      String horaSalida, String tiempoEstadia, long tiempoTotalMin, double tarifaBase,
-                      double sobrecargo, double totalCobrado, String metodoPago, String estado, String empleado) {
+                      String horaSalida, String tiempoEstadia, long tiempoTotalMin, double precioHora,
+                      String dniCliente, double totalCobrado, String metodoPago, String estado, String empleado) {
         this.codigoTicket = codigoTicket;
         this.fecha = fecha;
         this.placa = placa;
@@ -39,8 +39,8 @@ public class FilaExport {
         this.horaSalida = horaSalida;
         this.tiempoEstadia = tiempoEstadia;
         this.tiempoTotalMin = tiempoTotalMin;
-        this.tarifaBase = tarifaBase;
-        this.sobrecargo = sobrecargo;
+        this.precioHora = precioHora;
+        this.dniCliente = dniCliente;
         this.totalCobrado = totalCobrado;
         this.metodoPago = metodoPago;
         this.estado = estado;
@@ -50,7 +50,7 @@ public class FilaExport {
     public String[] comoArreglo() {
         return new String[] {
             codigoTicket, fecha, placa, tipoVehiculo, horaEntrada, horaSalida, tiempoEstadia,
-            String.valueOf(tiempoTotalMin), Dinero.decimal(tarifaBase), Dinero.decimal(sobrecargo),
+            String.valueOf(tiempoTotalMin), Dinero.decimal(precioHora), dniCliente,
             Dinero.decimal(totalCobrado), metodoPago, estado, empleado
         };
     }

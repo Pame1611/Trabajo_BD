@@ -34,7 +34,7 @@ classDiagram
         +cerrar(fecha, declarado, efectivoSistema)
         +estaAbierto() boolean
     }
-    class TicketCochera {
+    class Alquiler {
         -String placa
         -String codigoBarras
         -LocalDateTime horaEntrada
@@ -70,7 +70,7 @@ classDiagram
         +mostrar()
         #getOpciones() List*
         #atenderOpcion(int)*
-        #alSeleccionarVehiculo(TicketCochera)
+        #alSeleccionarVehiculo(Alquiler)
     }
     class MenuEmpleado
     class MenuAdministrador
@@ -81,12 +81,12 @@ classDiagram
     Usuario <|-- Empleado
     Usuario <|-- Administrador
     Empleado "1" --> "*" TurnoCaja : abre
-    TicketCochera "*" --> "1" Tarifa : tipo de vehiculo
-    Pago "1" --> "1" TicketCochera : liquida
+    Alquiler "*" --> "1" Tarifa : tipo de vehiculo
+    Pago "1" --> "1" Alquiler : liquida
     Pago "*" --> "1" TurnoCaja : turno de quien cobra
     TicketImprimible <|-- TicketEntrada
     TicketImprimible <|-- TicketSalida
-    TicketEntrada --> TicketCochera
+    TicketEntrada --> Alquiler
     TicketSalida --> Pago
     Impresora <|.. ImpresoraTermicaConsola
     Impresora <|.. ImpresoraArchivo

@@ -8,7 +8,7 @@ import java.time.ZoneId;
  *
  * Todas las clases piden la hora a este objeto (nunca a LocalDateTime.now() directamente),
  * así en la demostración se puede "adelantar el tiempo" para mostrar los cobros
- * por bloques de 12 horas sin esperar 12 horas reales.
+ * de estadías largas y las alertas de 10 h y 12 h sin esperar horas reales.
  */
 public class Reloj {
 

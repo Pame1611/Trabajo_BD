@@ -1,6 +1,6 @@
 package cochera.dto;
 
-import cochera.modelo.TicketCochera;
+import cochera.modelo.Alquiler;
 import java.time.LocalDateTime;
 
 /**
@@ -9,17 +9,17 @@ import java.time.LocalDateTime;
  */
 public class CotizacionSalida {
 
-    private final TicketCochera ticket;
+    private final Alquiler ticket;
     private final ResultadoTarifa tarifa;
     private final LocalDateTime calculadoEn;
 
-    public CotizacionSalida(TicketCochera ticket, ResultadoTarifa tarifa, LocalDateTime calculadoEn) {
+    public CotizacionSalida(Alquiler ticket, ResultadoTarifa tarifa, LocalDateTime calculadoEn) {
         this.ticket = ticket;
         this.tarifa = tarifa;
         this.calculadoEn = calculadoEn;
     }
 
-    public TicketCochera getTicket() {
+    public Alquiler getTicket() {
         return ticket;
     }
 

@@ -11,13 +11,13 @@ import java.util.UUID;
 public class Pago {
 
     private final String id;
-    private final TicketCochera ticket;
+    private final Alquiler ticket;
     private final TurnoCaja turno;
     private final double montoTotal;
     private final LocalDateTime creadoEn;
     private MetodoPago metodoPago;
 
-    public Pago(TicketCochera ticket, TurnoCaja turno, double montoTotal, MetodoPago metodoPago, LocalDateTime creadoEn) {
+    public Pago(Alquiler ticket, TurnoCaja turno, double montoTotal, MetodoPago metodoPago, LocalDateTime creadoEn) {
         this.id = UUID.randomUUID().toString();
         this.ticket = ticket;
         this.turno = turno;
@@ -35,7 +35,7 @@ public class Pago {
         return id;
     }
 
-    public TicketCochera getTicket() {
+    public Alquiler getTicket() {
         return ticket;
     }
 
