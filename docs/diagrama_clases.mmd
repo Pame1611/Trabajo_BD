@@ -3,7 +3,7 @@ classDiagram
     class Usuario {
         <<abstract>>
         -String id
-        -String email
+        -String dni
         -String passwordHash
         -String nombreCompleto
         +getRol() Rol*
@@ -21,9 +21,45 @@ classDiagram
     class Tarifa {
         -int id
         -String tipoVehiculo
-        -double costoBase
-        -double sobrecargoHora
+        -double precioHora
+        -double tarifaMensual
         +actualizarPrecios(double, double)
+        +getPrecioMinuto() double
+    }
+    class Cliente {
+        -String dni
+        -String nombreCompleto
+        -String telefono
+        +actualizar(String, String)
+    }
+    class Venta {
+        -Cliente cliente
+        -Alquiler alquiler
+        -Pago pago
+        +getMonto() double
+    }
+    class Marca {
+        -int id
+        -String nombre
+    }
+    class Modelo {
+        -int id
+        -String nombre
+        -Marca marca
+        -Tarifa tipoVehiculo
+        +getDescripcion() String
+    }
+    class TipoAlquiler {
+        <<enumeration>>
+        POR_HORA
+        MENSUAL
+    }
+    class AlquilerMensual {
+        +DESCUENTO = 0.10
+        -LocalDateTime fechaFin
+        +calcularMonto(LocalDateTime) double
+        +calcularSubtotal(LocalDateTime) double
+        +mesesHasta(LocalDateTime) int
     }
     class TurnoCaja {
         -LocalDateTime fechaApertura
@@ -40,6 +76,13 @@ classDiagram
         -LocalDateTime horaEntrada
         -LocalDateTime horaSalida
         -EstadoTicket estado
+        -Cliente cliente
+        -Usuario empleado
+        -Modelo modelo
+        +calcularMonto(LocalDateTime) double
+        +calcularSubtotal(LocalDateTime) double
+        +calcularDescuento(LocalDateTime) double
+        +getTipoAlquiler() TipoAlquiler
         +registrarSalida(LocalDateTime)
         +anular()
     }
@@ -82,6 +125,15 @@ classDiagram
     Usuario <|-- Administrador
     Empleado "1" --> "*" TurnoCaja : abre
     Alquiler "*" --> "1" Tarifa : tipo de vehiculo
+    Alquiler <|-- AlquilerMensual : redefine calcularMonto()
+    Alquiler "*" --> "1" Cliente : cliente_dni
+    Alquiler "*" --> "1" Modelo : modelo_id
+    Alquiler ..> TipoAlquiler
+    Marca "1" --> "*" Modelo : tiene
+    Modelo "*" --> "0..1" Tarifa : tipo de vehiculo
+    Cliente "1" --> "*" Venta : compra
+    Venta "1" --> "1" Alquiler
+    Venta "1" --> "1" Pago
     Pago "1" --> "1" Alquiler : liquida
     Pago "*" --> "1" TurnoCaja : turno de quien cobra
     TicketImprimible <|-- TicketEntrada
