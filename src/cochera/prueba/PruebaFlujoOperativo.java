@@ -56,26 +56,26 @@ public class PruebaFlujoOperativo {
         ctx.getAuth().cerrarSesion();
 
         ctx.getAuth().validarAcceso(CAJERO1, "cajero123");
-        v.lanza(AccesoDenegadoException.class, () -> ctx.getCheckin().registrarEntrada(JUAN, "Juan", "ABC123", 6),
+        v.lanza(AccesoDenegadoException.class, () -> ctx.getCheckin().registrarEntrada(JUAN, "Juan", "ABC123", 0, 6),
                 "Sin turno abierto no hay entrada");
         TurnoCaja turno1 = ctx.getTurnos().abrirTurno();
         v.lanza(ValidacionException.class, () -> ctx.getTurnos().abrirTurno(), "No se abren dos turnos a la vez");
         v.lanza(AccesoDenegadoException.class, () -> ctx.getAdmin().obtenerKpiHoy(), "El cajero no ve el panel admin");
 
         System.out.println("=== Entrada con DNI del cliente ===");
-        v.lanza(ValidacionException.class, () -> ctx.getCheckin().registrarEntrada("123", "", "ABC123", 6),
+        v.lanza(ValidacionException.class, () -> ctx.getCheckin().registrarEntrada("123", "", "ABC123", 0, 6),
                 "DNI de cliente invalido rechazado");
-        Alquiler abc = ctx.getCheckin().registrarEntrada(JUAN, "Juan Pérez Rojas", "abc-123", 6);
+        Alquiler abc = ctx.getCheckin().registrarEntrada(JUAN, "Juan Pérez Rojas", "abc-123", 0, 6);
         v.verdadero(abc.getPlaca().equals("ABC123") && abc.getCodigoBarras().matches("TK-\\d{4}-000001"),
                 "Placa normalizada y codigo " + abc.getCodigoBarras());
         v.verdadero(ctx.getClientes().buscar(JUAN) != null && abc.getCliente().getDni().equals(JUAN),
                 "El cliente nuevo se registra y queda en el alquiler");
         v.verdadero(abc.getEmpleado().getDni().equals(CAJERO1), "El alquiler guarda el DNI del empleado");
         v.verdadero(abc.getHoraSalida() == null, "La hora de salida queda vacia hasta la salida");
-        v.lanza(ValidacionException.class, () -> ctx.getCheckin().registrarEntrada(JUAN, "", "ABC123", 6),
+        v.lanza(ValidacionException.class, () -> ctx.getCheckin().registrarEntrada(JUAN, "", "ABC123", 0, 6),
                 "Placa duplicada EN_CURSO rechazada");
-        v.lanza(ValidacionException.class, () -> ctx.getCheckin().registrarEntrada(JUAN, "", "A1", 6), "Placa demasiado corta");
-        v.lanza(ValidacionException.class, () -> ctx.getCheckin().registrarEntrada(JUAN, "", "QWE111", 99),
+        v.lanza(ValidacionException.class, () -> ctx.getCheckin().registrarEntrada(JUAN, "", "A1", 0, 6), "Placa demasiado corta");
+        v.lanza(ValidacionException.class, () -> ctx.getCheckin().registrarEntrada(JUAN, "", "QWE111", 0, 99),
                 "Tipo de vehiculo invalido");
 
         System.out.println("=== Paso del tiempo: 13 horas ===");
@@ -86,7 +86,7 @@ public class PruebaFlujoOperativo {
         v.verdadero(ctx.getCheckout().alquileresEnCursoDeCliente(JUAN).contains(abc), "Busqueda de alquileres por DNI");
 
         System.out.println("=== Traslape de turnos: cajero1 registra, cajero2 cobra ===");
-        Alquiler xyz = ctx.getCheckin().registrarEntrada(ROSA, "Rosa Díaz Vega", "XYZ789", 6);
+        Alquiler xyz = ctx.getCheckin().registrarEntrada(ROSA, "Rosa Díaz Vega", "XYZ789", 0, 6);
         ctx.getReloj().adelantarMinutos(40);
         ctx.getAuth().cerrarSesion();
         ctx.getAuth().validarAcceso(CAJERO2, "cajero123");
@@ -140,7 +140,7 @@ public class PruebaFlujoOperativo {
                 for (int i = 0; i < 20; i++) {
                     try {
                         String dni = String.format("%08d", 40000000 + base + i);
-                        codigos.add(ctx.getCheckin().registrarEntrada(dni, "", String.format("P%05d", base + i), 1)
+                        codigos.add(ctx.getCheckin().registrarEntrada(dni, "", String.format("P%05d", base + i), 0, 1)
                                 .getCodigoBarras());
                     } catch (Exception e) {
                         codigos.add("ERROR " + e.getMessage());

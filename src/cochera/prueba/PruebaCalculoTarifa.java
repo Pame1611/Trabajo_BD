@@ -21,9 +21,9 @@ public class PruebaCalculoTarifa {
         Tarifa camioneta = new Tarifa(8, "Camioneta Cerrada y Abierta", 5.00);
 
         System.out.println("=== HU-09: ejemplos del documento de requerimientos ===");
-        Alquiler a = new Alquiler("ABC123", auto, entrada, "TK-2026-000001", cliente, null);
+        Alquiler a = new Alquiler("ABC123", auto, entrada, "TK-2026-000001", cliente, null, null);
         v.igual(3.00, a.calcularMonto(entrada.plusMinutes(60)), "Auto S/ 3.00 por hora con 60 minutos paga S/ 3.00");
-        Alquiler c = new Alquiler("XYZ789", camioneta, entrada, "TK-2026-000002", cliente, null);
+        Alquiler c = new Alquiler("XYZ789", camioneta, entrada, "TK-2026-000002", cliente, null, null);
         v.igual(7.50, c.calcularMonto(entrada.plusMinutes(90)), "Camioneta S/ 5.00 por hora con 90 minutos paga S/ 7.50");
 
         System.out.println("=== Auto a S/ 3.00 por hora (S/ 0.05 por minuto) ===");
@@ -37,7 +37,7 @@ public class PruebaCalculoTarifa {
 
         System.out.println("=== Redondeo a centimos y casos limite ===");
         Tarifa moto = new Tarifa(3, "Moto Lineal", 1.50);
-        Alquiler m = new Alquiler("MTR456", moto, entrada, "TK-2026-000003", cliente, null);
+        Alquiler m = new Alquiler("MTR456", moto, entrada, "TK-2026-000003", cliente, null, null);
         v.igual(0.03, m.calcularMonto(entrada.plusMinutes(1)), "Moto 1 min = 1.50/60 = 0.025 -> S/ 0.03");
         v.igual(0.00, m.calcularMonto(entrada.minusMinutes(5)), "Una hora de salida anterior no da montos negativos");
         v.igual(m.calcularMonto(entrada.plusMinutes(37)), CalculadoraTarifa.montoPorMinutos(37, 1.50),
